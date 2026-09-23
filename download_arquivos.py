@@ -81,7 +81,6 @@ for parametro in regras_dados.keys():
 
     colunas_dados = df.columns[5:]
 
-    #df[colunas_dados] = df[colunas_dados].apply(pd.to_numeric, errors='coerce')
     df[colunas_dados] = df[colunas_dados].replace([999, 999.0, 99.0, 99.00], np.nan)
 
     if parametro in ['r1', 'r2']:
