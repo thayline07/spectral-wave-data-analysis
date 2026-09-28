@@ -49,16 +49,20 @@ for freq in range(len(frequencias)):
 
 
     # Máxima entropia
-    gamma1 = r1_freq*np.cos(angulos_rad - a1_rad)
-    gamma2 = r2_freq*np.cos(2.0 * (angulos_rad - a2_rad))
+    c1 = r1_freq * np.exp(1j * a1_rad)
+    c2 = r2_freq * np.exp(1j * 2.0 * a2_rad)
 
-    numerador = 1.0 - r1_freq**2
-    denominador = (1.0 - gamma1)**2 + (gamma1 - gamma2)**2
+    phi2 = (c2 - (c1**2)) / (1.0 - (np.abs(c1) ** 2))
+    phi1 = c1 - (phi2 * np.conj(c1))
 
-    if np.any(denominador == 0):
-        D_max_entropia = np.zeros_like(angulos_rad)
-    else: 
-        D_max_entropia = (1.0 / (2.0 * np.pi)) * (numerador / denominador)
+    termo_exp1 = np.exp(-1j * angulos_rad)
+    termo_exp2 = np.exp(-2j * angulos_rad)
+
+    numerador = 1.0 - np.real(phi1 * np.conj(c1) + phi2 * np.conj(c2))
+    denominador = np.abs(1.0 - (phi1 * termo_exp1) - (phi2 * termo_exp2)) ** 2
+
+    D_max_entropia = (1.0 / (2.0 * np.pi)) * (numerador / denominador)
+    D_max_entropia = np.real(D_max_entropia)
 
     matriz_max_entropia[freq, :] = D_max_entropia * w_freq
 
