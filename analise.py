@@ -56,10 +56,30 @@ df_series = pd.DataFrame({
     "Tp": lista_tp,
 })
 
-horas_ausentes = df_series["Hs"].isna().sum()
-print(f"Quantidade de horas ausentes: {horas_ausentes}")
-
 df_series["data_registro"] = pd.to_datetime(df_series[["year", "month", "day", "hour"]])
+
+# Implementado 28/09: Teste de ausência de dados
+df_series = df_series.set_index("data_registro").sort_index()
+
+intervalo_minutos = pd.Series(np.diff(df_series.index)).value_counts().index[0]
+intervalo_minutos_int = int(intervalo_minutos.total_seconds() / 60)
+
+data_inicio = df_series.index.min()
+data_fim = df_series.index.max()
+
+calendario_completo = pd.date_range(start=data_inicio, end=data_fim, freq=f'{intervalo_minutos_int}min')
+
+df_base = df_series.reindex(calendario_completo)
+df_base.index.name = "data_registro"
+print(df_series.head())
+
+total_horas_esperadas = len(calendario_completo)
+total_horas_registradas = len(df_series)
+gaps = df_base["Hs"].isna().sum()
+
+print(f"Total de horas esperadas: {total_horas_esperadas}")
+print(f"Total de horas registradas: {total_horas_registradas}")
+print(f"Total de períodos ausentes: {gaps}")
 
 dir_destino = os.path.join("dados", f"{id_boia}_{year}")
 
