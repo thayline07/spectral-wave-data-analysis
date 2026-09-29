@@ -69,16 +69,24 @@ for freq in range(len(frequencias)):
 # Gráficos polares
 Angulos, Freqs = np.meshgrid(angulos_rad, frequencias)
 
+f_pico_idx = np.argmax(w)
+f_pico_valor = frequencias[f_pico_idx]
+
+
+v_min = np.min(matriz_fourier)
+v_max = np.max(matriz_max_entropia)
+niveis_cores = np.linspace(v_min, v_max, 30)
+
+
+
 fig, axes = plt.subplots(1, 2, figsize=(15, 6), subplot_kw={'projection': 'polar'})
 
 # Expansão de Fourier
-contorno1 = axes[0].contourf(Angulos, Freqs, matriz_fourier, cmap='jet', levels=30)
-fig.colorbar(contorno1, ax=axes[0], orientation='vertical', label='Densidade de energia (m²/Hz)')
+contorno1 = axes[0].contourf(Angulos, Freqs, matriz_fourier, cmap='jet', levels=niveis_cores)
 axes[0].set_title("Reconstrução por Fourier", fontsize=12, fontweight='bold')
 
 # Máxima entropia
-contorno2 = axes[1].contourf(Angulos, Freqs, matriz_max_entropia, cmap='jet', levels=30)
-fig.colorbar(contorno2, ax=axes[1], orientation='vertical', label='Densidade de energia (m²/Hz)')
+contorno2 = axes[1].contourf(Angulos, Freqs, matriz_max_entropia, cmap='jet', levels=niveis_cores)
 axes[1].set_title("Reconstrução por Máxima Entropia", fontsize=12, fontweight='bold')
 
 for ax in axes:
@@ -86,46 +94,42 @@ for ax in axes:
     ax.set_theta_direction(-1)
     ax.set_ylim([frequencias.min(), frequencias.max()])
 
-plt.tight_layout()
+fig.subplots_adjust(right=1.4)
+cbar_ax = fig.add_axes([0.88, 0.15, 0.02, 0.7])
+fig.colorbar(contorno2, cax=cbar_ax, label='Densidade de Energia ($m^2/Hz/rad$)')
 
-plt.savefig(f"reconstrucao_{id_boia}_{year}.png", dpi=300)
+caminho_polar = f"reconstrucao_polar_{id_boia}_{year}.png"
+plt.tight_layout()
+plt.savefig(caminho_polar, dpi=300, bbox_inches='tight')
 plt.show()
 
-"""
-==============================================================================
-ANÁLISE E COMPARAÇÃO DOS MÉTODOS DE RECONSTRUÇÃO DIRECIONAL (BOIA 46075)
-==============================================================================
+plt.figure(figsize=(9, 5))
 
-A partir dos gráficos polares gerados para a primeira hora do ano de 2023, 
-na estação 46075 (Alasca), a comparação entre os métodos evidencia o seguinte:
+# Isolamos a linha da frequência de pico de cada matriz
+# Como as matrizes guardam "D * w", dividimos pela energia total (w_freq)
+# para extrair a distribuição direcional D(theta) pura que integra a 1
+w_pico = w[f_pico_idx]
+D_fourier_pico = matriz_fourier[f_pico_idx, :] / w_pico
+D_mem_pico = matriz_max_entropia[f_pico_idx, :] / w_pico
 
-1. COMPORTAMENTO FÍSICO E GEOGRÁFICO DO MAR REAL:
-   - Ambas as reconstruções identificam com sucesso que o sistema de ondas 
-     dominante para este horário vem da direção de Leste (concentrado entre 
-     80° e 100°).
-   - O pico de energia ocorre em frequências intermediárias (em torno de 
-     0.12 Hz a 0.15 Hz), o que equivale a ondas com períodos de 7 a 8 segundos 
-     (caracterizando vagas bem desenvolvidas ou marulhos curtos).
+# Plota as duas linhas no mesmo eixo para comparação direta
+plt.plot(angulos_graus, D_fourier_pico, label="Expansão de Fourier (Baixa Resolução)", color="orange", linewidth=2.5)
+plt.plot(angulos_graus, D_mem_pico, label="Máxima Entropia (MEM) (Alta Resolução)", color="green", linestyle="-.", linewidth=2.5)
 
-2. EXPANSÃO DE FOURIER (TRUNCADA EM 2ª ORDEM):
-   - Apresenta uma resolução angular visivelmente mais baixa, gerando uma 
-     mancha de energia muito mais "esparramada" (borrada) ao redor do círculo.
-   - Restrição Matemática/Física: Por utilizar uma série truncada, o método 
-     sofre com oscilações numéricas e gera valores de densidade de energia 
-     NEGATIVOS (conforme indicado na escala da barra de cores em -0.24), o que 
-     é fisicamente impossível no oceano real.
+# Configurações estéticas do gráfico cartesiano
+plt.title(f"Comparação de $D(\\theta)$ na Frequência de Pico ({f_pico_valor:.3f} Hz)", fontsize=12, fontweight="bold")
+plt.xlabel("Direção (Graus)", fontsize=11)
+plt.ylabel("Densidade Direcional $D(\\theta)$", fontsize=11)
+plt.xlim(0, 360)
+plt.xticks(np.arange(0, 361, 45)) # Marcadores angulares de 45° em 45°
+plt.grid(linestyle="--", alpha=0.5)
+plt.legend(fontsize=10, loc="upper right")
 
-3. MÉTODO DA MÁXIMA ENTROPIA (MEM):
-   - Exibe uma resolução angular infinitamente superior. A mancha de energia 
-     é estreita, nítida e muito mais focada na direção real de propagação.
-   - Vantagem Física: O MEM respeita estritamente a conservação de energia e 
-     as leis da física, travando o limite inferior da escala de densidade 
-     estritamente em 0.00 (eliminando energias negativas artificiais).
+plt.tight_layout()
+caminho_cartesiano = f"comparacao_cartesiana_{id_boia}_{year}.png"
+plt.savefig(caminho_cartesiano, dpi=300)
+plt.show()
 
-CONCLUSÃO DA ENTREGA:
-O Método da Máxima Entropia (MEM) valida-se como a ferramenta mais robusta 
-e precisa para o mapeamento direcional do espectro de ondas, sendo ideal 
-para separar sistemas complexos e focados em mar aberto onde a Expansão de 
-Fourier falha por excesso de suavização espacial.
-==============================================================================
-"""
+
+
+
