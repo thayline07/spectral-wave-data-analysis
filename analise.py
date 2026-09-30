@@ -5,7 +5,7 @@ import pandas as pd
 
 
 
-id_boia = "46075"
+id_boia = "41004"
 year = 2023
 caminho = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
 
@@ -52,13 +52,23 @@ df_series = pd.DataFrame({
     "month": df_w["MM"],
     "day": df_w["DD"],
     "hour": df_w["hh"],
+    "minute": df_w["mm"], 
     "Hs": lista_hs,
     "Tp": lista_tp,
 })
 
-df_series["data_registro"] = pd.to_datetime(df_series[["year", "month", "day", "hour"]])
+df_series["data_registro"] = pd.to_datetime(
+    pd.DataFrame({
+        "year": df_series["year"],
+        "month": df_series["month"],
+        "day": df_series["day"],
+        "hour": df_series["hour"],
+        "minute": df_series["minute"]
+    })
+)
 
-# Implementado 28/09: Teste de ausência de dados
+df_series = df_series.drop_duplicates(subset=["data_registro"])
+
 df_series = df_series.set_index("data_registro").sort_index()
 
 intervalo_minutos = pd.Series(np.diff(df_series.index)).value_counts().index[0]
@@ -71,15 +81,10 @@ calendario_completo = pd.date_range(start=data_inicio, end=data_fim, freq=f'{int
 
 df_base = df_series.reindex(calendario_completo)
 df_base.index.name = "data_registro"
-print(df_series.head())
 
 total_horas_esperadas = len(calendario_completo)
 total_horas_registradas = len(df_series)
 gaps = df_base["Hs"].isna().sum()
-
-print(f"Total de horas esperadas: {total_horas_esperadas}")
-print(f"Total de horas registradas: {total_horas_registradas}")
-print(f"Total de períodos ausentes: {gaps}")
 
 dir_destino = os.path.join("dados", f"{id_boia}_{year}")
 
