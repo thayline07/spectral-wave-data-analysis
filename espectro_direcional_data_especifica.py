@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-id_boia = "46075"
+id_boia = "41004"
 year = 2023
 
 caminho_arq = os.path.join(
@@ -40,8 +40,8 @@ df_w["data_registro"] = pd.to_datetime(
     })
 )
 
-dia_alvo = 1
-mes_alvo = 1
+dia_alvo = 30
+mes_alvo = 11
 
 # Filtra os índices que pertencem ao dia escolhido
 indices_dia = df_w[
@@ -51,7 +51,7 @@ indices_dia = df_w[
 
 if len(indices_dia) == 0:
     print(
-        f"❌ Nenhum dado encontrado para o dia {dia_alvo:02d}/{mes_alvo:02d}/{year}."
+        f"Nenhum dado encontrado para o dia {dia_alvo:02d}/{mes_alvo:02d}/{year}."
     )
     exit(1)
 
@@ -97,9 +97,11 @@ for freq in range(len(frequencias)):
     )
     matriz_fourier[freq, :] = D_fourier * w_f
 
-    # Máxima Entropia 
     c1 = r1_f * np.exp(1j * a1_f)
     c2 = r2_f * np.exp(1j * 2.0 * a2_f)
+
+    if np.abs(c1) >= 0.99:
+        c1 = c1 * 0.99 / np.abs(c1)
 
     phi2 = (c2 - (c1**2)) / (1.0 - (np.abs(c1) ** 2))
     phi1 = c1 - (phi2 * np.conj(c1))
@@ -111,16 +113,19 @@ for freq in range(len(frequencias)):
     denominador = (
         np.abs(1.0 - (phi1 * termo_exp1) - (phi2 * termo_exp2)) ** 2
     )
+    
+    denominador = np.maximum(denominador, 1e-4)
 
     D_max_entropia = (1.0 / (2.0 * np.pi)) * (numerador / denominador)
     matriz_max_entropia[freq, :] = D_max_entropia.real * w_f
+
     print("Area Fourier:", np.trapezoid(D_fourier, angulos_rad), ", Area MEM:", np.trapezoid(D_max_entropia.real, angulos_rad))
 
 Angulos, Freqs = np.meshgrid(angulos_rad, frequencias)
 
 v_min = np.min(matriz_fourier)
 v_max = np.max(matriz_max_entropia)
-niveis_cores = np.linspace(v_min, v_max, 30)
+niveis_cores = np.linspace(v_min, v_max, 50)
 
 fig1, axes1 = plt.subplots(
     1, 2, figsize=(15, 6), subplot_kw={"projection": "polar"}
@@ -133,8 +138,11 @@ axes1[0].set_title(
     "Reconstrução por Fourier\n(Média Diária)", fontsize=12, fontweight="bold"
 )
 
+
+matriz_max_entropia_plot = np.maximum(matriz_max_entropia, 0)
+
 contorno2 = axes1[1].contourf(
-    Angulos, Freqs, matriz_max_entropia, cmap="jet", levels=niveis_cores
+    Angulos, Freqs, matriz_max_entropia_plot, cmap="jet", levels=niveis_cores
 )
 axes1[1].set_title(
     "Reconstrução por Máxima Entropia (MEM)\n(Média Diária)",
@@ -158,9 +166,7 @@ caminho_polar = f"reconstrucao_polar_media_{id_boia}_{year}.png"
 print(f"💾 Figura 1 (Polares) salva em: {caminho_polar}")
 plt.show()
 
-# ==============================================================================
-# 5. PLOTAGEM DA FIGURA 2: GRÁFICO CARTESIANO DE LINHA DE D(THETA)
-# ==============================================================================
+#Gráfico cartesiano
 f_pico_idx = np.argmax(w_medio)
 f_pico_valor = frequencias[f_pico_idx]
 
@@ -203,4 +209,4 @@ plt.tight_layout()
 caminho_cartesiano = f"comparacao_cartesiana_media_{id_boia}_{year}.png"
 #plt.savefig(caminho_cartesiano, dpi=300)
 print(f"💾 Figura 2 (Gráfico Cartesiano) salva em: {caminho_cartesiano}")
-plt.show()
+#plt.show()
