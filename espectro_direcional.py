@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 id_boia = "46075"
 year = 2023
 
+data_alvo = f"{year}-01-01 00:40:00"
+
 caminho_arq = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
 
 if os.path.exists(caminho_arq):
@@ -15,12 +17,19 @@ if os.path.exists(caminho_arq):
 else:
     print(f"Arquivo '{caminho_arq}' não encontrado. Por favor, execute o download primeiro.")
 
+
 # Frequências
 df_w = dados['w']
 frequencias = np.array([float(col) for col in df_w.columns[5:]])
 print("Frequências carregadas:", len(frequencias))
 
-w = df_w.iloc[0, 5:].values.astype(float)
+linha_alvo = df_w[df_w['data'] == data_alvo].index
+if len(linha_alvo) == 0:
+    print(f"Data '{data_alvo}' não encontrada no DataFrame.")
+    exit()
+
+
+w = df_w.iloc[linha_alvo, 5:].values.astype(float)
 alpha1 = dados['alpha1'].iloc[0, 5:].values.astype(float)
 alpha2 = dados['alpha2'].iloc[0, 5:].values.astype(float)
 r1 = dados['r1'].iloc[0, 5:].values.astype(float)
