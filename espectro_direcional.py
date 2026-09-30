@@ -130,7 +130,7 @@ plt.title(f"Comparação de $D(\\theta)$ na Frequência de Pico ({f_pico_valor:.
 plt.xlabel("Direção (Graus)", fontsize=11)
 plt.ylabel("Densidade Direcional $D(\\theta)$", fontsize=11)
 plt.xlim(0, 360)
-plt.xticks(np.arange(0, 361, 45)) # Marcadores angulares de 45° em 45°
+plt.xticks(np.arange(0, 361, 45))
 plt.grid(linestyle="--", alpha=0.5)
 plt.legend(fontsize=10, loc="upper right")
 
