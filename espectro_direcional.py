@@ -2,11 +2,12 @@ import os
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 id_boia = "46075"
 year = 2023
 
-data_alvo = f"{year}-01-01 00:40:00"
+data_alvo = f"{year}-01-01 01:40:00"
 
 caminho_arq = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
 
@@ -23,17 +24,29 @@ df_w = dados['w']
 frequencias = np.array([float(col) for col in df_w.columns[5:]])
 print("Frequências carregadas:", len(frequencias))
 
-linha_alvo = df_w[df_w['data'] == data_alvo].index
+df_w["data_registro"] = pd.to_datetime(
+    pd.DataFrame({
+        "year": df_w["#YY"],
+        "month": df_w["MM"],
+        "day": df_w["DD"],
+        "hour": df_w["hh"],
+        "minute": df_w["mm"]
+    })
+)
+
+linha_alvo = df_w[df_w['data_registro'] == data_alvo].index
+
+
 if len(linha_alvo) == 0:
-    print(f"Data '{data_alvo}' não encontrada no DataFrame.")
-    exit()
+    print(f"Erro: A data '{data_alvo}' não foi encontrada no arquivo!")
+    exit(1)
 
 
-w = df_w.iloc[linha_alvo, 5:].values.astype(float)
-alpha1 = dados['alpha1'].iloc[0, 5:].values.astype(float)
-alpha2 = dados['alpha2'].iloc[0, 5:].values.astype(float)
-r1 = dados['r1'].iloc[0, 5:].values.astype(float)
-r2 = dados['r2'].iloc[0, 5:].values.astype(float)
+w = df_w.iloc[linha_alvo, 5:-1].values.astype(float).flatten()
+alpha1 = dados['alpha1'].iloc[linha_alvo, 5:].values.astype(float).flatten()
+alpha2 = dados['alpha2'].iloc[linha_alvo, 5:].values.astype(float).flatten()
+r1 = dados['r1'].iloc[linha_alvo, 5:].values.astype(float).flatten()
+r2 = dados['r2'].iloc[linha_alvo, 5:].values.astype(float).flatten()
 
 angulos_graus = np.arange(0, 360, 1)
 angulos_rad = np.radians(angulos_graus)
@@ -121,7 +134,7 @@ w_pico = w[f_pico_idx]
 D_fourier_pico = matriz_fourier[f_pico_idx, :] / w_pico
 D_mem_pico = matriz_max_entropia[f_pico_idx, :] / w_pico
 
-# Plota as duas linhas no mesmo eixo para comparação direta
+
 plt.plot(angulos_graus, D_fourier_pico, label="Expansão de Fourier (Baixa Resolução)", color="orange", linewidth=2.5)
 plt.plot(angulos_graus, D_mem_pico, label="Máxima Entropia (MEM) (Alta Resolução)", color="green", linestyle="-.", linewidth=2.5)
 
@@ -130,14 +143,14 @@ plt.title(f"Comparação de $D(\\theta)$ na Frequência de Pico ({f_pico_valor:.
 plt.xlabel("Direção (Graus)", fontsize=11)
 plt.ylabel("Densidade Direcional $D(\\theta)$", fontsize=11)
 plt.xlim(0, 360)
-plt.xticks(np.arange(0, 361, 45))
+plt.xticks(np.arange(0, 361, 45)) 
 plt.grid(linestyle="--", alpha=0.5)
 plt.legend(fontsize=10, loc="upper right")
 
-plt.tight_layout()
+#plt.tight_layout()
 caminho_cartesiano = f"comparacao_cartesiana_{id_boia}_{year}.png"
 plt.savefig(caminho_cartesiano, dpi=300)
-plt.show()
+#plt.show()
 
 
 
