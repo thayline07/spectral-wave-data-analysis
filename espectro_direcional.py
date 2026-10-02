@@ -4,12 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-id_boia = "46075"
-year = 2023
+# outras boias para teste:
+# 46080 (2019), 41004 (2016), 41040 (2016).
 
-data_alvo = f"{year}-01-01 01:40:00"
+id_boia = "41004"
+year = 2016
+
+data_alvo = f"{year}-0-18 13:50:00"
 
 caminho_arq = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
+caminho_wind = os.path.join("dados", f"{id_boia}_{year}", f"wind_{id_boia}_{year}.csv")
 
 if os.path.exists(caminho_arq):
     with open(caminho_arq, 'rb') as arq:
@@ -17,6 +21,36 @@ if os.path.exists(caminho_arq):
     print(f"Arquivo '{caminho_arq}' carregado com sucesso!")
 else:
     print(f"Arquivo '{caminho_arq}' não encontrado. Por favor, execute o download primeiro.")
+
+
+
+
+
+if os.path.exists(caminho_wind):
+    df_wind = pd.read_csv(caminho_wind)
+    
+    # Converte a coluna para datetime para fazer o cruzamento exato
+    df_wind["data_registro"] = pd.to_datetime(df_wind["data_registro"])
+    
+    # Filtra a linha exata que possui o mesmo carimbo de data, hora e minuto do espectro
+    wind_instante = df_wind[df_wind["data_registro"] == data_alvo]
+    
+    if not wind_instante.empty:
+        # Extrai os valores reais daquela hora exata
+        wdir_real = wind_instante["wdir"].values[0]
+        wspd_real = wind_instante["wspd"].values[0]
+        
+        print("\n=== 🌬️ DIAGNÓSTICO METEOROLÓGICO DA NOAA (INSTANTÂNEO) ===")
+        print(f"Data/Hora Analisada:                  {data_alvo} GMT")
+        print(f"Direção de onde o VENTO soprava:      {wdir_real:.1f}° (Geográfica)")
+        print(f"Velocidade do VENTO local no instante: {wspd_real:.2f} m/s (cerca de {wspd_real * 1.94384:.1f} nós)")
+        print("===========================================================\n")
+    else:
+        print(f"\n⚠️ Dados de vento ausentes no banco de dados para o instante: {data_alvo}")
+else:
+    print(f"\n⚠️ Arquivo de vento tratado '{caminho_wind}' não localizado.")
+
+
 
 
 # Frequências
