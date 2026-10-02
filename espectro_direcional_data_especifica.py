@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-id_boia = "41004"
+id_boia = "46075"
 year = 2023
 
 caminho_arq = os.path.join(
@@ -40,8 +40,10 @@ df_w["data_registro"] = pd.to_datetime(
     })
 )
 
+
+# resultados críticos: 02/12, 
 dia_alvo = 30
-mes_alvo = 11
+mes_alvo = 1
 
 # Filtra os índices que pertencem ao dia escolhido
 indices_dia = df_w[
