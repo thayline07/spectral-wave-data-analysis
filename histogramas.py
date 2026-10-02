@@ -2,7 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 
-id_boia = "41040"
+id_boia = "41004"
 year = 2023
 
 caminho_csv = os.path.join("dados", f"{id_boia}_{year}", f"series_temporais_{id_boia}_{year}.csv")
@@ -17,7 +17,14 @@ else:
 # Histogramas
 
 # Altura significativa 
+
+altura_máxima = df_series["Hs"].max()
+mediana_hs = df_series["Hs"].median()
+print(mediana_hs, altura_máxima)
+
 plt.figure(figsize=(7, 5))
+plt.axvline(x=mediana_hs, color='red', linestyle='--', label=f'Mediana: {mediana_hs:.2f} m')
+plt.axvline(x=altura_máxima, color='green', linestyle='--', label=f'Hs Máximo: {altura_máxima:.2f} m')
 plt.hist(
     df_series["Hs"].dropna(),
     bins=25,
@@ -25,6 +32,7 @@ plt.hist(
     alpha=0.7,
     edgecolor="black",
 )
+plt.legend()
 plt.title(f"Histograma de Hs - Boia {id_boia} - Ano {year}", fontsize=12, fontweight="bold")
 plt.xlabel("Altura $H_s$ (metros)", fontsize=11)
 plt.ylabel("Frequência (Quantidade de Horas)", fontsize=11)
