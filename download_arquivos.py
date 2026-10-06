@@ -6,22 +6,8 @@ import pickle
 
 # Boias escolhidas:
 # 41004 (2023, 2024, 2025)
-# 41040 (2023, 2024, 2025)
-# 46075 (2023, 2024, 2025)
-
-# Configurações
-id_boia = "46075"
-year = 2023
-
-# Baixar arquivos do NDBC
-
-dir_destino = os.path.join("dados", f"{id_boia}_{year}")
-
-if not os.path.exists(dir_destino):
-    os.makedirs(dir_destino)
-    print(f"Diretório '{dir_destino}' criado com sucesso!")
-else:
-    print(f"Diretório '{dir_destino}' já existe. Nenhuma ação necessária.")
+# 41040 (2019, 2020, 2021)
+# 46080 (2023, 2024, 2025)
 
 regras_dados = {
     "w": {"pasta_web": "swden", "sufixo": "w"},
@@ -31,70 +17,95 @@ regras_dados = {
     "r2": {"pasta_web": "swr2", "sufixo": "k"},
 }
 
-downloads_completos = True
 
+def baixar_dados(id_boia, year):
+    """Baixa os 5 arquivos espectrais da boia/ano, aplica o controle de qualidade
+    e salva o .pkl. Retorna o caminho do .pkl, ou None se os dados estiverem incompletos."""
 
-for parametro, config in regras_dados.items():
-    pasta_serv = config["pasta_web"]
-    letra_sufixo = config["sufixo"]
+    # Baixar arquivos do NDBC
 
-    nome_arquivo = f"{id_boia}{letra_sufixo}{year}.txt.gz"
+    dir_destino = os.path.join("dados", f"{id_boia}_{year}")
 
-    url_completa = f"https://www.ndbc.noaa.gov/data/historical/{pasta_serv}/{nome_arquivo}"
-
-    caminho_salv = os.path.join(dir_destino, nome_arquivo)
-
-    if os.path.exists(caminho_salv):
-        print(f"Arquivo '{nome_arquivo}' já existe. Pulando download.")
+    if not os.path.exists(dir_destino):
+        os.makedirs(dir_destino)
+        print(f"Diretório '{dir_destino}' criado com sucesso!")
     else:
-        req = urllib.request.Request(url_completa, headers={'User-Agent': 'Mozilla/5.0'})
+        print(f"Diretório '{dir_destino}' já existe. Nenhuma ação necessária.")
 
-        try: 
-            with urllib.request.urlopen(req) as response:
-                with open(caminho_salv, 'wb') as arq_local:
-                    arq_local.write(response.read())
-            print(f"Arquivo '{parametro}' baixado com sucesso!")
+    downloads_completos = True
 
-        except urllib.error.HTTPError as e:
-            print(
-                f" Falha ao acessar [{parametro.upper()}]: Erro HTTP {e.code} - {e.reason}"
-            )
-            downloads_completos = False
-            break
+    for parametro, config in regras_dados.items():
+        pasta_serv = config["pasta_web"]
+        letra_sufixo = config["sufixo"]
 
-        except Exception as e:
-            print(f"Falha ao baixar {parametro.upper()}")
-            downloads_completos = False
+        nome_arquivo = f"{id_boia}{letra_sufixo}{year}.txt.gz"
 
-            if not downloads_completos:
-                print(f"Não existem dados espectrais direcionais COMPLETOS para a boia {id_boia} no ano de {year}.")
+        url_completa = f"https://www.ndbc.noaa.gov/data/historical/{pasta_serv}/{nome_arquivo}"
+
+        caminho_salv = os.path.join(dir_destino, nome_arquivo)
+
+        if os.path.exists(caminho_salv):
+            print(f"Arquivo '{nome_arquivo}' já existe. Pulando download.")
+        else:
+            req = urllib.request.Request(url_completa, headers={'User-Agent': 'Mozilla/5.0'})
+
+            try:
+                with urllib.request.urlopen(req) as response:
+                    with open(caminho_salv, 'wb') as arq_local:
+                        arq_local.write(response.read())
+                print(f"Arquivo '{parametro}' baixado com sucesso!")
+
+            except urllib.error.HTTPError as e:
+                print(
+                    f" Falha ao acessar [{parametro.upper()}]: Erro HTTP {e.code} - {e.reason}"
+                )
+                downloads_completos = False
                 break
 
-# Controle de Qualidade
-dados = {}
+            except Exception as e:
+                print(f"Falha ao baixar {parametro.upper()}")
+                downloads_completos = False
+                break
 
-for parametro in regras_dados.keys():
-    nome_arq = f"{id_boia}{regras_dados[parametro]['sufixo']}{year}.txt.gz"
-    caminho_arq = os.path.join(dir_destino, nome_arq)
+    if not downloads_completos:
+        print(f"Não existem dados espectrais direcionais COMPLETOS para a boia {id_boia} no ano de {year}.")
+        return None
 
-    df = pd.read_csv(caminho_arq, sep=r'\s+', skiprows=[1])
+    # Controle de Qualidade
+    dados = {}
 
-    colunas_dados = df.columns[5:]
+    for parametro in regras_dados.keys():
+        nome_arq = f"{id_boia}{regras_dados[parametro]['sufixo']}{year}.txt.gz"
+        caminho_arq = os.path.join(dir_destino, nome_arq)
 
-    df[colunas_dados] = df[colunas_dados].replace([999, 999.0, 99.0, 99.00], np.nan)
+        df = pd.read_csv(caminho_arq, sep=r'\s+', skiprows=[1])
 
-    if parametro in ['r1', 'r2']:
-        # Correção: Os arquivos de energia espectral (r1 e r2) estão em centésimos, então precisamos multiplicar por 0.01 para obter os valores corretos.
-        df[colunas_dados] = df[colunas_dados] * 0.01
-
-    dados[parametro] = df
+        colunas_dados = df.columns[5:]
 
 
-# Salvar os dataframes em um arquivo
-if dados:
+        if parametro in ['r1', 'r2']:
+            # Correção: Os arquivos de energia espectral (r1 e r2) estão em centésimos, então precisamos multiplicar por 0.01 para obter os valores corretos.
+            df[colunas_dados] = df[colunas_dados] * 0.01
+
+        dados[parametro] = df
+
+
+    # Salvar os dataframes em um arquivo
     caminho_salvar = os.path.join(dir_destino, f"dados_{id_boia}_{year}.pkl")
 
     with open(caminho_salvar, 'wb') as f:
         pickle.dump(dados, f)
 
+    return caminho_salvar
 
+
+# Boias escolhidas:
+# 41004 (2023, 2024, 2025)
+# 41040 (2019, 2020, 2021)
+# 46080 (2023, 2024, 2025)
+
+if __name__ == "__main__":# Configurações
+    id_boia = "46080"
+    year = 2022
+
+    baixar_dados(id_boia, year)
