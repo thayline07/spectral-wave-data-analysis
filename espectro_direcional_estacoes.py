@@ -110,7 +110,7 @@ for nome_estacao, meses in estacoes_hn.items():
         r1 = np.abs(c1)
         a1 = np.angle(c1)
         r2 = np.abs(c2)
-        a2 = np.angle(c2)
+        a2 = np.angle(c2)/2.0
 
         if np.isnan([w_f, r1, r2, a1, a2]).any():
             continue
@@ -135,7 +135,6 @@ for nome_estacao, meses in estacoes_hn.items():
 
         numerador = 1.0 - np.real(phi1 * np.conj(c1) + phi2 * np.conj(c2))
         denominador = (np.abs(1.0 - (phi1 * termo_exp1) - (phi2 * termo_exp2)) ** 2)
-        denominador = np.maximum(denominador, 1e-4)
 
         D_max_entropia = (1.0 / (2.0 * np.pi)) * (numerador / denominador)
         matriz_max_entropia[freq, :] = D_max_entropia.real * w_f
@@ -152,9 +151,8 @@ for nome_estacao, meses in estacoes_hn.items():
     contorno1 = axes1[0].contourf(Angulos, Freqs, matriz_fourier, cmap="jet", levels=niveis_cores)
     axes1[0].set_title(f"Reconstrução por Fourier\n(Média: {rotulo})", fontsize=12, fontweight="bold")
 
-    matriz_max_entropia_plot = np.maximum(matriz_max_entropia, 0)
 
-    contorno2 = axes1[1].contourf(Angulos, Freqs, matriz_max_entropia_plot, cmap="jet", levels=niveis_cores)
+    contorno2 = axes1[1].contourf(Angulos, Freqs, matriz_max_entropia, cmap="jet", levels=niveis_cores)
     axes1[1].set_title(f"Reconstrução por Máxima Entropia (MEM)\n(Média: {rotulo})", fontsize=12, fontweight="bold")
 
     for ax in axes1:
