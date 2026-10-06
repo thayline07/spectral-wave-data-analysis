@@ -4,7 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-id_boia = "46075"
+# Boias escolhidas:
+# 41004 (2023, 2024, 2025)
+# 41040 (2019, 2020, 2021)
+# 46080 (2023, 2024, 2025)
+
+id_boia = "46080"
 year = 2023
 
 caminho_arq = os.path.join(
@@ -42,8 +47,8 @@ df_w["data_registro"] = pd.to_datetime(
 
 
 # resultados críticos: 02/12, 
-dia_alvo = 30
-mes_alvo = 1
+dia_alvo = 2
+mes_alvo = 6
 
 # Filtra os índices que pertencem ao dia escolhido
 indices_dia = df_w[
@@ -57,22 +62,24 @@ if len(indices_dia) == 0:
     )
     exit(1)
 
-w_medio = df_w.iloc[indices_dia, 5:-1].mean(axis=0).values.astype(float)
-r1_medio = df_r1.iloc[indices_dia, 5:].mean(axis=0).values.astype(float)
-r2_medio = df_r2.iloc[indices_dia, 5:].mean(axis=0).values.astype(float)
+w_dia = df_w.iloc[indices_dia, 5:-1].values.astype(float)
+r1_dia = df_r1.iloc[indices_dia, 5:].values.astype(float)
+r2_dia = df_r2.iloc[indices_dia, 5:].values.astype(float)
+alpha1_dia = np.radians(df_alpha1.iloc[indices_dia, 5:].values.astype(float))
+alpha2_dia = np.radians(df_alpha2.iloc[indices_dia, 5:].values.astype(float))
 
-# Isola as matrizes de ângulos em graus para o dia
-alpha1_dia = df_alpha1.iloc[indices_dia, 5:].values.astype(float)
-alpha2_dia = df_alpha2.iloc[indices_dia, 5:].values.astype(float)
+c1_dia = r1_dia * np.exp(1j * alpha1_dia)
+c2_dia = r2_dia * np.exp(2j * alpha2_dia)
 
-alpha1_medio = np.arctan2(
-    np.mean(np.sin(np.radians(alpha1_dia)), axis=0),
-    np.mean(np.cos(np.radians(alpha1_dia)), axis=0),
-)
-alpha2_medio = np.arctan2(
-    np.mean(np.sin(np.radians(2.0 * alpha2_dia)), axis=0),
-    np.mean(np.cos(np.radians(2.0 * alpha2_dia)), axis=0),
-) / 2.0
+validos = ~(np.isnan(w_dia) | np.isnan(c1_dia) | np.isnan(c2_dia))
+peso = np.where(validos, w_dia, 0.0)
+soma_pesos = peso.sum(axis=0)
+
+with np.errstate(divide="ignore", invalid="ignore"):
+    c1_medio = np.sum(peso * np.where(validos, c1_dia, 0), axis=0) / soma_pesos
+    c2_medio = np.sum(peso * np.where(validos, c2_dia, 0), axis=0) / soma_pesos
+
+w_medio = np.nanmean(w_dia, axis=0)
 
 angulos_graus = np.arange(0, 360, 1)
 angulos_rad = np.radians(angulos_graus)
@@ -83,10 +90,13 @@ matriz_max_entropia = np.zeros((len(frequencias), len(angulos_graus)))
 
 for freq in range(len(frequencias)):
     w_f = w_medio[freq]
-    r1_f = r1_medio[freq]
-    r2_f = r2_medio[freq]
-    a1_f = alpha1_medio[freq]
-    a2_f = alpha2_medio[freq]
+    c1 = c1_medio[freq]
+    c2 = c2_medio[freq]
+
+    r1_f = np.abs(c1)
+    a1_f = np.angle(c1)
+    r2_f = np.abs(c2)
+    a2_f = np.angle(c2)
 
     if np.isnan([w_f, r1_f, r2_f, a1_f, a2_f]).any():
         continue
@@ -99,11 +109,10 @@ for freq in range(len(frequencias)):
     )
     matriz_fourier[freq, :] = D_fourier * w_f
 
-    c1 = r1_f * np.exp(1j * a1_f)
-    c2 = r2_f * np.exp(1j * 2.0 * a2_f)
 
-    if np.abs(c1) >= 0.99:
-        c1 = c1 * 0.99 / np.abs(c1)
+    if r1_f >= 1.0:
+        print(f"{frequencias[freq]:.3f} Hz: |c1| = 1, MEM indefinido. Pulando.")
+        continue
 
     phi2 = (c2 - (c1**2)) / (1.0 - (np.abs(c1) ** 2))
     phi1 = c1 - (phi2 * np.conj(c1))
@@ -127,7 +136,7 @@ Angulos, Freqs = np.meshgrid(angulos_rad, frequencias)
 
 v_min = np.min(matriz_fourier)
 v_max = np.max(matriz_max_entropia)
-niveis_cores = np.linspace(v_min, v_max, 50)
+niveis_cores = np.linspace(v_min, v_max, 30)
 
 fig1, axes1 = plt.subplots(
     1, 2, figsize=(15, 6), subplot_kw={"projection": "polar"}
@@ -165,7 +174,7 @@ fig1.colorbar(
 
 caminho_polar = f"reconstrucao_polar_media_{id_boia}_{year}.png"
 #plt.savefig(caminho_polar, dpi=300, bbox_inches="tight")
-print(f"💾 Figura 1 (Polares) salva em: {caminho_polar}")
+print(f"Figura 1 (Polares) salva em: {caminho_polar}")
 plt.show()
 
 #Gráfico cartesiano
@@ -210,5 +219,5 @@ plt.legend(fontsize=10, loc="upper right")
 plt.tight_layout()
 caminho_cartesiano = f"comparacao_cartesiana_media_{id_boia}_{year}.png"
 #plt.savefig(caminho_cartesiano, dpi=300)
-print(f"💾 Figura 2 (Gráfico Cartesiano) salva em: {caminho_cartesiano}")
-#plt.show()
+print(f" Figura 2 (Gráfico Cartesiano) salva em: {caminho_cartesiano}")
+plt.show()
