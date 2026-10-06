@@ -3,7 +3,10 @@ import pickle
 import numpy as np
 import pandas as pd
 
-
+# Boias escolhidas:
+# 41004 (2023, 2024, 2025)
+# 41040 (2019, 2020, 2021)
+# 46080 (2023, 2024, 2025)
 
 id_boia = "41004"
 year = 2023
