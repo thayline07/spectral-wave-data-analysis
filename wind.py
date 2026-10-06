@@ -5,13 +5,13 @@ import numpy as np
 import pickle
 
 # Boias escolhidas:
-# 41004 (2016)
-# 41040 (2016)
-# 46080 (2019)
+# 41004 (2023, 2024, 2025)
+# 41040 (2019, 2020, 2021)
+# 46080 (2023, 2024, 2025)
 
 # Configurações
-id_boia = "41004"
-year = 2013
+id_boia = "46080"
+year = 2025
 
 # Baixar arquivos do NDBC
 
@@ -73,6 +73,9 @@ caminho_arq = os.path.join(dir_destino, nome_arq)
 if os.path.exists(caminho_arq):
     df = pd.read_csv(caminho_arq, sep=r'\s+', skiprows=[1])
 
+df["WDIR"] = df["WDIR"].replace(999, np.nan)
+df["WSPD"] = df["WSPD"].replace(99.0, np.nan)
+
 df_series = pd.DataFrame({
     "year": df["#YY"],
     "month": df["MM"],
@@ -98,4 +101,4 @@ print(df_series)
 dir_destino = os.path.join("dados", f"{id_boia}_{year}")
 
 caminho_csv = os.path.join(dir_destino, f"wind_{id_boia}_{year}.csv")
-df_series.to_csv(caminho_csv)
+df_series.to_csv(caminho_csv, index=False)
