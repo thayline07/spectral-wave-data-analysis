@@ -96,7 +96,7 @@ for freq in range(len(frequencias)):
     r1_f = np.abs(c1)
     a1_f = np.angle(c1)
     r2_f = np.abs(c2)
-    a2_f = np.angle(c2)
+    a2_f = np.angle(c2)/2.0
 
     if np.isnan([w_f, r1_f, r2_f, a1_f, a2_f]).any():
         continue
@@ -125,7 +125,6 @@ for freq in range(len(frequencias)):
         np.abs(1.0 - (phi1 * termo_exp1) - (phi2 * termo_exp2)) ** 2
     )
     
-    denominador = np.maximum(denominador, 1e-4)
 
     D_max_entropia = (1.0 / (2.0 * np.pi)) * (numerador / denominador)
     matriz_max_entropia[freq, :] = D_max_entropia.real * w_f
@@ -149,11 +148,8 @@ axes1[0].set_title(
     "Reconstrução por Fourier\n(Média Diária)", fontsize=12, fontweight="bold"
 )
 
-
-matriz_max_entropia_plot = np.maximum(matriz_max_entropia, 0)
-
 contorno2 = axes1[1].contourf(
-    Angulos, Freqs, matriz_max_entropia_plot, cmap="jet", levels=niveis_cores
+    Angulos, Freqs, matriz_max_entropia, cmap="jet", levels=niveis_cores
 )
 axes1[1].set_title(
     "Reconstrução por Máxima Entropia (MEM)\n(Média Diária)",
