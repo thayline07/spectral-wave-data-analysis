@@ -2,6 +2,8 @@ import os
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
+from matplotlib.lines import Line2D
 import pandas as pd
 
 # Boias escolhidas:
@@ -13,7 +15,7 @@ id_boia = "46080"
 year = 2025
 
 # Dados são registrados nos minutos 10 e 40
-data_alvo = pd.Timestamp(f"{year}-01-14 09:10:00")
+data_alvo = pd.Timestamp(f"{year}-01-16 08:10:00")
 
 caminho_arq = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
 caminho_wind = os.path.join("dados", f"{id_boia}_{year}", f"wind_{id_boia}_{year}.csv")
@@ -50,6 +52,8 @@ if len(linha_alvo) == 0:
     exit(1)
 
 # Vento
+wdir_vento = wspd_vento = np.nan
+hora_vento = None
 if os.path.exists(caminho_wind):
     df_wind = pd.read_csv(caminho_wind, parse_dates=["data_registro"])
     df_wind = df_wind.dropna(subset=["dir", "vel"])
@@ -155,6 +159,22 @@ for ax in axes:
     ax.set_theta_direction(-1)
     ax.set_ylim([frequencias.min(), frequencias.max()])
 
+if not np.isnan(wdir_vento):
+    theta_vento = np.radians(wdir_vento)
+    f_min, f_max = frequencias.min(), frequencias.max()
+    for ax in axes:
+        ax.annotate(
+            "", xy=(theta_vento, f_min + 0.35 * (f_max - f_min)), xytext=(theta_vento, f_max),
+            arrowprops=dict(arrowstyle="-|>", color="white", lw=3, mutation_scale=22,
+                            path_effects=[pe.withStroke(linewidth=1, foreground="black")]),
+        )
+
+    # Legenda indicando que a seta branca é o vento
+    seta_legenda = Line2D([], [], linestyle="None", marker=r"$\longrightarrow$", markersize=30,
+                          color="white", markeredgecolor="black", markeredgewidth=0.4)
+    fig.legend([seta_legenda], ["Vento"], loc="upper left", fontsize=11,
+               facecolor="darkblue", labelcolor="white", framealpha=1)
+
 fig.subplots_adjust(right=1.4)
 cbar_ax = fig.add_axes([0.88, 0.15, 0.02, 0.7])
 fig.colorbar(contorno2, cax=cbar_ax, label='Densidade de Energia ($m^2/Hz/rad$)')
@@ -172,7 +192,7 @@ fig.text(0.5, 0.02, texto_vento, ha="center", fontsize=11)
 
 caminho_polar = f"reconstrucao_polar_{id_boia}_{year}.png"
 plt.tight_layout()
-plt.savefig(caminho_polar, dpi=300, bbox_inches='tight')
+#plt.savefig(caminho_polar, dpi=300, bbox_inches='tight')
 plt.show()
 
 plt.figure(figsize=(9, 5))
@@ -204,9 +224,5 @@ plt.legend(fontsize=10, loc="upper right")
 
 #plt.tight_layout()
 caminho_cartesiano = f"comparacao_cartesiana_{id_boia}_{year}.png"
-plt.savefig(caminho_cartesiano, dpi=300)
-plt.show()
-
-
-
-
+#plt.savefig(caminho_cartesiano, dpi=300)
+#plt.show()
