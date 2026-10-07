@@ -3,7 +3,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-id_boia = "46080"
+# Boias escolhidas:
+# 41004 (2023, 2024, 2025)
+# 41040 (2019, 2020, 2021)
+# 46080 (2023, 2024, 2025)
+
+id_boia = "41004"
 year = 2025
 
 caminho_csv = os.path.join("dados", f"{id_boia}_{year}", f"series_temporais_{id_boia}_{year}.csv")
@@ -56,7 +61,7 @@ ax.set_yticks([0, 10, 50, 100, 250, 500, 1000, 2000, 3000, 4000])
 plt.legend()
 plt.title(f"Histograma de Hs - Boia {id_boia} - Ano {year}", fontsize=12, fontweight="bold")
 plt.xlabel("Altura $H_s$ (metros)", fontsize=11)
-plt.ylabel("Frequência (Número de registros)", fontsize=11)
+plt.ylabel("Frequência $N$ (número de registros)\nescala $\u221AN$", fontsize=11)
 plt.grid(axis="y", linestyle="--", alpha=0.5)
 plt.tight_layout()
 
