@@ -11,11 +11,11 @@ import pandas as pd
 # 41040 (2019, 2020, 2021)
 # 46080 (2023, 2024, 2025)
 
-id_boia = "46080"
+id_boia = "41004"
 year = 2025
 
 # Dados são registrados nos minutos 10 e 40
-data_alvo = pd.Timestamp(f"{year}-01-16 08:10:00")
+data_alvo = pd.Timestamp(f"{year}-01-06 20:10:00")
 
 caminho_arq = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
 caminho_wind = os.path.join("dados", f"{id_boia}_{year}", f"wind_{id_boia}_{year}.csv")
@@ -146,6 +146,21 @@ niveis_cores = np.linspace(v_min, v_max, 30)
 fig, axes = plt.subplots(1, 2, figsize=(15, 6), subplot_kw={'projection': 'polar'})
 fig.suptitle(f"Boia {id_boia} - {data_alvo:%d/%m/%Y %H:%M} UTC", fontsize=15, fontweight="bold", y=0.98,)
 
+# Confirmar com alpha 1:
+#print("Valor de alpha1:")
+#print(dados['alpha1'].loc[linha_alvo, ".1200"])
+
+def ao_clicar(event):
+    if event.inaxes not in axes:
+        return
+    direcao = np.degrees(event.xdata) % 360
+    i = np.argmin(np.abs(frequencias - event.ydata))  
+    print(f"{direcao:.0f}° em {frequencias[i]:.4f} Hz  ->  alpha1 = {alpha1[i]:.0f}°")
+
+fig.canvas.mpl_connect("button_press_event", ao_clicar)
+
+
+
 # Expansão de Fourier
 contorno1 = axes[0].contourf(Angulos, Freqs, matriz_fourier, cmap='jet', levels=niveis_cores)
 axes[0].set_title("Reconstrução por Fourier", fontsize=12, fontweight='bold')
@@ -192,7 +207,7 @@ fig.text(0.5, 0.02, texto_vento, ha="center", fontsize=11)
 
 caminho_polar = f"reconstrucao_polar_{id_boia}_{year}.png"
 plt.tight_layout()
-#plt.savefig(caminho_polar, dpi=300, bbox_inches='tight')
+plt.savefig(caminho_polar, dpi=300, bbox_inches='tight')
 plt.show()
 
 plt.figure(figsize=(9, 5))
