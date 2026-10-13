@@ -3,15 +3,18 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from wavespectra.input.ndbc_ascii import read_file, construct_spectra
 
+ano = 2025
+boia = "46080"
+
 # ===================== CONFIGURACAO =====================
 ARQUIVOS = {                      # os 5 arquivos da MESMA boia e do MESMO ano
-    "swden":  "dados/46080_2025/46080w2025.txt.gz",
-    "swdir":  "dados/46080_2025/46080d2025.txt.gz",    # alpha1
-    "swdir2": "dados/46080_2025/46080i2025.txt.gz",    # alpha2
-    "swr1":   "dados/46080_2025/46080j2025.txt.gz",    # r1
-    "swr2":   "dados/46080_2025/46080k2025.txt.gz",    # r2
+    "swden":  f"dados/{boia}_{ano}/{boia}w{ano}.txt.gz",
+    "swdir":  f"dados/{boia}_{ano}/{boia}d{ano}.txt.gz",    # alpha1
+    "swdir2": f"dados/{boia}_{ano}/{boia}i{ano}.txt.gz",    # alpha2
+    "swr1":   f"dados/{boia}_{ano}/{boia}j{ano}.txt.gz",    # r1
+    "swr2":   f"dados/{boia}_{ano}/{boia}k{ano}.txt.gz",    # r2
 }
-INSTANTE = "2025-01-14 09:10"     # o mais proximo desse horario sera usado
+INSTANTE = "2025-01-01 09:40"     # o mais proximo desse horario sera usado
 SAIDA = "espectro_wavespectra.png"
 # ========================================================
 

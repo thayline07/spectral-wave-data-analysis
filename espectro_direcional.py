@@ -11,7 +11,7 @@ import pandas as pd
 # 41040 (2019, 2020, 2021)
 # 46080 (2023, 2024, 2025)
 
-id_boia = "41004"
+id_boia = "46080"
 year = 2025
 
 # Dados são registrados nos minutos 10 e 40
@@ -109,7 +109,7 @@ for freq in range(len(frequencias)):
 
     D_fourier = (1.0 / np.pi) * (0.5 + (r1_freq * np.cos(angulos_rad - a1_rad)) + (r2_freq * np.cos(2.0 * (angulos_rad - a2_rad))))
 
-    matriz_fourier[freq, :] = D_fourier * w_freq
+    matriz_fourier[freq, :] = (D_fourier * w_freq) * (np.pi / 180)
 
 
     # Máxima entropia
@@ -128,7 +128,7 @@ for freq in range(len(frequencias)):
     D_max_entropia = (1.0 / (2.0 * np.pi)) * (numerador / denominador)
     D_max_entropia = np.real(D_max_entropia)
 
-    matriz_max_entropia[freq, :] = D_max_entropia * w_freq
+    matriz_max_entropia[freq, :] = (D_max_entropia * w_freq) * (np.pi / 180)
 
 # Gráficos polares
 Angulos, Freqs = np.meshgrid(angulos_rad, frequencias)
@@ -192,7 +192,7 @@ if not np.isnan(wdir_vento):
 
 fig.subplots_adjust(right=1.4)
 cbar_ax = fig.add_axes([0.88, 0.15, 0.02, 0.7])
-fig.colorbar(contorno2, cax=cbar_ax, label='Densidade de Energia ($m^2/Hz/rad$)')
+fig.colorbar(contorno2, cax=cbar_ax, label='Densidade de Energia ($m^2/Hz/$)')
 
 if not np.isnan(wdir_vento):
     texto_vento = (
@@ -240,4 +240,4 @@ plt.legend(fontsize=10, loc="upper right")
 #plt.tight_layout()
 caminho_cartesiano = f"comparacao_cartesiana_{id_boia}_{year}.png"
 #plt.savefig(caminho_cartesiano, dpi=300)
-#plt.show()
+plt.show()

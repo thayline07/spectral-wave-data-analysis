@@ -10,7 +10,7 @@ import pickle
 # 46080 (2023, 2024, 2025)
 
 # Configurações
-id_boia = "46080"
+id_boia = "41004"
 year = 2025
 
 # Baixar arquivos do NDBC
