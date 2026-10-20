@@ -7,16 +7,15 @@ from matplotlib.lines import Line2D
 import pandas as pd
 
 # Boias escolhidas:
-# 41004 (2023, 2024, 2025) Bacia do Atlântico Norte (Carolina do Sul)
-# 41040 (2019, 2020, 2021) Atlântico Norte Tropical (perto das Bahamas)
-# 46080 (2023, 2024, 2025) Golfo do Alasca
+# 41004 (2023, 2024, 2025)
+# 41040 (2019, 2020, 2021)
+# 46080 (2023, 2024, 2025)
 
 id_boia = "46080"
-local = "Golfo do Alasca"
 year = 2025
 
 # Dados são registrados nos minutos 10 e 40
-data_alvo = pd.Timestamp(f"{year}-01-01 09:10:00")
+data_alvo = pd.Timestamp(f"{year}-01-06 20:10:00")
 
 caminho_arq = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
 caminho_wind = os.path.join("dados", f"{id_boia}_{year}", f"wind_{id_boia}_{year}.csv")
@@ -96,51 +95,6 @@ angulos_rad = np.radians(angulos_graus)
 
 matriz_fourier = np.zeros((len(frequencias), len(angulos_graus)))
 matriz_max_entropia = np.zeros((len(frequencias), len(angulos_graus)))
-matriz_shannon = np.zeros((len(frequencias), len(angulos_graus)))
-
-
-dth = angulos_rad[1] - angulos_rad[0]
-phi = np.array([np.cos(angulos_rad), np.sin(angulos_rad), np.cos(2 * angulos_rad), np.sin(2 * angulos_rad)])
-
-
-def _dist(lam):
-    logw = -(lam @ phi)
-    mx = logw.max()
-    ew = np.exp(logw - mx)
-    Z = ew.sum() * dth
-    return ew / Z, np.log(Z) + mx
-
-def mem_shannon(m, tol=1e-10, maxiter=200):
-    lam = np.zeros(4)
-    D, logZ = _dist(lam)
-    F = logZ + lam @ m
-
-    for _ in range(maxiter):
-        E = phi @ D * dth
-        grad = m - E
-        if np.max(np.abs(grad)) < tol:
-            return D, True
-    
-        cov =  (phi * D) @ phi.T * dth - np.outer(E, E)
-        try:
-            passo = np.linalg.solve(cov + 1e-14 * np.eye(4), grad)
-        except np.linalg.LinAlgError:
-            return D, False
-        t = 1.0
-        while t > 1e-12:
-            lam_novo = lam - t * passo
-            D_novo, logZ_novo = _dist(lam_novo)
-            F_novo = logZ_novo + lam_novo @ m
-    
-            if np.isfinite(F_novo) and F_novo <= F - 1e-4 * t * (grad @ passo):
-                break
-            t *= 0.5
-        else: 
-            return D, False
-        lam, D, F = lam_novo, D_novo, F_novo
-    return D, bool(np.max(np.abs(m - phi @ D * dth)) < 1e-6)
-
-sem_convergir = []
 
 for freq in range(len(frequencias)):
     w_freq = w[freq]
@@ -158,11 +112,9 @@ for freq in range(len(frequencias)):
     matriz_fourier[freq, :] = (D_fourier * w_freq) * (np.pi / 180)
 
 
-    # Máxima entropia (Lygre-Krogstad)
+    # Máxima entropia
     c1 = r1_freq * np.exp(1j * a1_rad)
     c2 = r2_freq * np.exp(1j * 2.0 * a2_rad)
-
-    viavel = (np.abs(c1) < 1.0) and (np.abs(c2 - c1**2) < 1.0 - np.abs(c1)**2)
 
     phi2 = (c2 - (c1**2)) / (1.0 - (np.abs(c1) ** 2))
     phi1 = c1 - (phi2 * np.conj(c1))
@@ -178,44 +130,21 @@ for freq in range(len(frequencias)):
 
     matriz_max_entropia[freq, :] = (D_max_entropia * w_freq) * (np.pi / 180)
 
-    if not viavel:
-        matriz_max_entropia[freq, :] = np.nan
-
-    # Máxima entropia (Kobune e Hashimoto)
-    if viavel:
-        m = np.array([c1.real, c1.imag, c2.real, c2.imag])
-        D_shannon, ok = mem_shannon(m)
-        if ok:
-            matriz_shannon[freq, :] = (D_shannon * w_freq) * (np.pi / 180)
-        else:
-            matriz_shannon[freq, :] = np.nan
-            sem_convergir.append(frequencias[freq])
-    else:
-        matriz_shannon[freq, :] = np.nan
-        sem_convergir.append(frequencias[freq])
-
-
-print(f"Frequências sem MEM: {sem_convergir}")
-
 # Gráficos polares
 Angulos, Freqs = np.meshgrid(angulos_rad, frequencias)
 
 f_pico_idx = np.argmax(w)
 f_pico_valor = frequencias[f_pico_idx]
 
-print(matriz_shannon.sum(axis=1) / w)
-print(np.sum(matriz_shannon[f_pico_idx]) / w[f_pico_idx])   
 
-
-todas = np.concatenate([matriz_fourier.ravel(), matriz_max_entropia.ravel(), matriz_shannon.ravel()])
-
-v_min, v_max = np.nanmin(todas), np.nanmax(todas)
-
+v_min = np.min(matriz_fourier)
+v_max = np.max(matriz_max_entropia)
 niveis_cores = np.linspace(v_min, v_max, 30)
 
 
-fig, axes = plt.subplots(1, 3, figsize=(20, 6), subplot_kw={'projection': 'polar'}, layout='constrained')
-fig.suptitle(f"Boia {id_boia} - {data_alvo:%d/%m/%Y %H:%M} UTC - {local}", fontsize=15, fontweight="bold")
+
+fig, axes = plt.subplots(1, 2, figsize=(15, 6), subplot_kw={'projection': 'polar'})
+fig.suptitle(f"Boia {id_boia} - {data_alvo:%d/%m/%Y %H:%M} UTC", fontsize=15, fontweight="bold", y=0.98,)
 
 # Confirmar com alpha 1:
 #print("Valor de alpha1:")
@@ -236,13 +165,9 @@ fig.canvas.mpl_connect("button_press_event", ao_clicar)
 contorno1 = axes[0].contourf(Angulos, Freqs, matriz_fourier, cmap='jet', levels=niveis_cores)
 axes[0].set_title("Reconstrução por Fourier", fontsize=12, fontweight='bold')
 
-# Máxima entropia (Lygre-Krogstad)
+# Máxima entropia
 contorno2 = axes[1].contourf(Angulos, Freqs, matriz_max_entropia, cmap='jet', levels=niveis_cores)
-axes[1].set_title("Reconstrução MEM\n(Lygre-Krogstad)", fontsize=12, fontweight='bold')
-
-# Máxima entropia (Kobune e Hashimoto)
-contorno3 = axes[2].contourf(Angulos, Freqs, matriz_shannon, cmap='jet', levels=niveis_cores)
-axes[2].set_title("Reconstrução MEM\n(Kobune e Hashimoto)", fontsize=12, fontweight='bold')
+axes[1].set_title("Reconstrução por Máxima Entropia", fontsize=12, fontweight='bold')
 
 for ax in axes:
     ax.set_theta_zero_location('N')
@@ -265,7 +190,9 @@ if not np.isnan(wdir_vento):
     fig.legend([seta_legenda], ["Vento"], loc="upper left", fontsize=11,
                facecolor="darkblue", labelcolor="white", framealpha=1)
 
-fig.colorbar(contorno3, ax=axes, shrink=0.75, pad=0.04, label='Densidade de Energia ($m^2/Hz/deg$)')
+fig.subplots_adjust(right=1.4)
+cbar_ax = fig.add_axes([0.88, 0.15, 0.02, 0.7])
+fig.colorbar(contorno2, cax=cbar_ax, label='Densidade de Energia ($m^2/Hz/$)')
 
 if not np.isnan(wdir_vento):
     texto_vento = (
@@ -275,10 +202,11 @@ if not np.isnan(wdir_vento):
 else:
     texto_vento = "Vento: sem registro a até 20 min do espectro"
 
-fig.supxlabel(texto_vento, fontsize=11)
+fig.text(0.5, 0.02, texto_vento, ha="center", fontsize=11)
 
 
 caminho_polar = f"reconstrucao_polar_{id_boia}_{year}.png"
+plt.tight_layout()
 plt.savefig(caminho_polar, dpi=300, bbox_inches='tight')
 plt.show()
 
@@ -290,12 +218,10 @@ plt.figure(figsize=(9, 5))
 w_pico = w[f_pico_idx]
 D_fourier_pico = matriz_fourier[f_pico_idx, :] / w_pico
 D_mem_pico = matriz_max_entropia[f_pico_idx, :] / w_pico
-D_shannon_pico = matriz_shannon[f_pico_idx, :] / w_pico
 
 
 plt.plot(angulos_graus, D_fourier_pico, label="Expansão de Fourier (Baixa Resolução)", color="orange", linewidth=2.5)
-plt.plot(angulos_graus, D_mem_pico, label="MEM (Lygre-Krogstad)", color="green", linestyle="-.", linewidth=2.5)
-plt.plot(angulos_graus, D_shannon_pico, label="MEM (Kobune-Hashimoto)", color="purple", linewidth=2.5)
+plt.plot(angulos_graus, D_mem_pico, label="Máxima Entropia (MEM) (Alta Resolução)", color="green", linestyle="-.", linewidth=2.5)
 
 if not np.isnan(wdir_vento) and not np.isnan(wspd_vento):
     plt.axvline(x=wdir_vento, color="red", linestyle=":", linewidth=2,
@@ -311,6 +237,7 @@ plt.xticks(np.arange(0, 361, 45))
 plt.grid(linestyle="--", alpha=0.5)
 plt.legend(fontsize=10, loc="upper right")
 
+#plt.tight_layout()
 caminho_cartesiano = f"comparacao_cartesiana_{id_boia}_{year}.png"
 #plt.savefig(caminho_cartesiano, dpi=300)
 plt.show()
