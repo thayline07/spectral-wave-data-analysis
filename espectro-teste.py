@@ -5,7 +5,7 @@ import numpy as np
 freq = np.linspace(0.03, 0.4, 1000)
 frequencias = np.linspace(0.03, 0.4, 47)
 
-angulos_graus = np.arange(0, 360, 1)
+angulos_graus = np.arange(0, 361, 1)
 angulos_radianos = np.radians(angulos_graus)
 
 matriz_alvo = np.zeros((len(frequencias), len(angulos_graus)))

@@ -11,8 +11,12 @@ import pandas as pd
 # 41040 (2019, 2020, 2021)
 # 46080 (2023, 2024, 2025)
 
-id_boia = "46080"
+id_boia = "41004"
 year = 2025
+
+locais = {"41004": "Edisto, Carolina do Sul",
+          "41040": "Atlântico Norte, a leste das Pequenas Antilhas",
+          "46080": "Portlock Bank, Golfo do Alasca"}
 
 # Dados são registrados nos minutos 10 e 40
 data_alvo = pd.Timestamp(f"{year}-01-01 09:10:00")
@@ -90,7 +94,7 @@ r1 = dados['r1'].iloc[linha_alvo, 5:].values.astype(float).flatten()
 r2 = dados['r2'].iloc[linha_alvo, 5:].values.astype(float).flatten()
 
 # até 361 somente para preencher a linha vazia de 360° e fechar o gráfico polar 
-angulos_graus = np.arange(0, 360, 1)
+angulos_graus = np.arange(0, 361, 1)
 angulos_rad = np.radians(angulos_graus)
 
 matriz_fourier = np.zeros((len(frequencias), len(angulos_graus)))
@@ -210,11 +214,13 @@ todas = np.concatenate([matriz_fourier.ravel(), matriz_max_entropia.ravel(), mat
 
 v_min, v_max = np.nanmin(todas), np.nanmax(todas)
 
+print(f"v_min = {v_min:.6e} | v_max = {v_max:.6e}")
+
 niveis_cores = np.linspace(v_min, v_max, 30)
 
 
 fig, axes = plt.subplots(1, 3, figsize=(20, 6), subplot_kw={'projection': 'polar'}, layout='constrained')
-fig.suptitle(f"Boia {id_boia} - {data_alvo:%d/%m/%Y %H:%M} UTC", fontsize=15, fontweight="bold")
+fig.suptitle(f"Boia {id_boia} ({locais[id_boia]}) - {data_alvo:%d/%m/%Y %H:%M} UTC", fontsize=15, fontweight="bold")
 
 # Confirmar com alpha 1:
 #print("Valor de alpha1:")
@@ -292,7 +298,7 @@ D_mem_pico = matriz_max_entropia[f_pico_idx, :] / w_pico
 D_shannon_pico = matriz_shannon[f_pico_idx, :] / w_pico
 
 
-plt.plot(angulos_graus, D_fourier_pico, label="Expansão de Fourier (Baixa Resolução)", color="orange", linewidth=2.5)
+plt.plot(angulos_graus, D_fourier_pico, label="Expansão de Fourier", color="orange", linewidth=2.5)
 plt.plot(angulos_graus, D_mem_pico, label="MEM (Lygre-Krogstad)", color="green", linestyle="-.", linewidth=2.5)
 plt.plot(angulos_graus, D_shannon_pico, label="MEM (Kobune-Hashimoto)", color="purple", linewidth=2.5)
 
@@ -302,14 +308,14 @@ if not np.isnan(wdir_vento) and not np.isnan(wspd_vento):
 
 
 # Configurações estéticas do gráfico cartesiano
-plt.title(f"Comparação de $D(\\theta)$ na Frequência de Pico ({f_pico_valor:.3f} Hz)", fontsize=12, fontweight="bold")
+plt.title(f"Boia {id_boia} ({locais[id_boia]}) - {data_alvo:%d/%m/%Y %H:%M} UTC\nComparação de $D(\\theta)$ na Frequência de Pico ({f_pico_valor:.3f} Hz)", fontsize=12, fontweight="bold")
 plt.xlabel("Direção (Graus)", fontsize=11)
-plt.ylabel("Densidade Direcional $D(\\theta)$", fontsize=11)
+plt.ylabel("Densidade Direcional $D(\\theta)$ $(1/grau)$", fontsize=11)
 plt.xlim(0, 360)
 plt.xticks(np.arange(0, 361, 45)) 
 plt.grid(linestyle="--", alpha=0.5)
 plt.legend(fontsize=10, loc="upper right")
 
 caminho_cartesiano = f"comparacao_cartesiana_{id_boia}_{year}.png"
-#plt.savefig(caminho_cartesiano, dpi=300)
+plt.savefig(caminho_cartesiano, dpi=300)
 plt.show()

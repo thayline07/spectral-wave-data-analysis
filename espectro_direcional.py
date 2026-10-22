@@ -90,7 +90,7 @@ r1 = dados['r1'].iloc[linha_alvo, 5:].values.astype(float).flatten()
 r2 = dados['r2'].iloc[linha_alvo, 5:].values.astype(float).flatten()
 
 # até 361 somente para preencher a linha vazia de 360° e fechar o gráfico polar 
-angulos_graus = np.arange(0, 360, 1)
+angulos_graus = np.arange(0, 361, 1)
 angulos_rad = np.radians(angulos_graus)
 
 matriz_fourier = np.zeros((len(frequencias), len(angulos_graus)))

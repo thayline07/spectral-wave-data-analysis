@@ -8,8 +8,8 @@ import pandas as pd
 # 41040 (2019, 2020, 2021)
 # 46080 (2023, 2024, 2025)
 
-id_boia = "41004"
-year = 2023
+id_boia = "46080"
+year = 2025
 caminho = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
 
 try:
@@ -91,5 +91,23 @@ gaps = df_base["Hs"].isna().sum()
 
 dir_destino = os.path.join("dados", f"{id_boia}_{year}")
 
+# Altura significativa publicada pelo NDBC (WVHT, salva como "height" pelo wind.py)
+caminho_wind = os.path.join(dir_destino, f"wind_{id_boia}_{year}.csv")
+df_series = df_series.reset_index()
+
+if os.path.exists(caminho_wind):
+    met = pd.read_csv(caminho_wind, parse_dates=["data_registro"])
+    met = met[["data_registro", "height"]].dropna().sort_values("data_registro")
+
+    df_series = pd.merge_asof(
+        df_series.sort_values("data_registro"),
+        met,
+        on="data_registro",
+        direction="nearest",
+        tolerance=pd.Timedelta("20min"),
+    )
+else:
+    print(f"Aviso: {caminho_wind} não encontrado; o CSV ficará sem a coluna height. Rode o wind.py antes.")
+
 caminho_csv = os.path.join(dir_destino, f"series_temporais_{id_boia}_{year}.csv")
-df_series.to_csv(caminho_csv)
+df_series.to_csv(caminho_csv, index=False)
