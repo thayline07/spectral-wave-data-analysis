@@ -10,7 +10,7 @@ import pickle
 # 46080 (2023, 2024, 2025)
 
 # Configurações
-id_boia = "41004"
+id_boia = "46080"
 year = 2025
 
 # Baixar arquivos do NDBC
@@ -66,15 +66,23 @@ for parametro, config in regras_dados.items():
                 print(f"Não existem dados espectrais direcionais COMPLETOS para a boia {id_boia} no ano de {year}.")
                 break
 
+if not downloads_completos:
+    print(f"Download incompleto para a boia {id_boia} no ano de {year}. Encerrando.")
+    exit(1)
+
 
 nome_arq = f"{id_boia}{regras_dados[parametro]['sufixo']}{year}.txt.gz"
 caminho_arq = os.path.join(dir_destino, nome_arq)
 
 if os.path.exists(caminho_arq):
     df = pd.read_csv(caminho_arq, sep=r'\s+', skiprows=[1])
+else:
+    print(f"Arquivo {caminho_arq} não encontrado.")
+    exit(1)
 
 df["WDIR"] = df["WDIR"].replace(999, np.nan)
 df["WSPD"] = df["WSPD"].replace(99.0, np.nan)
+df["WVHT"] = df["WVHT"].replace(99.0, np.nan)
 
 df_series = pd.DataFrame({
     "year": df["#YY"],
@@ -84,6 +92,7 @@ df_series = pd.DataFrame({
     "minute": df["mm"], 
     "dir": df["WDIR"],
     "vel": df["WSPD"],
+    "height": df["WVHT"],
 })
 
 df_series["data_registro"] = pd.to_datetime(
