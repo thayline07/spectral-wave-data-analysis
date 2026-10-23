@@ -28,6 +28,10 @@ for id_boia in boias:
     n = len(df)
     erro_medio = (x - y).mean()
     sinal = "+" if erro_medio >= 0 else "−"
+
+    rmse = np.sqrt(np.mean((x - y) ** 2))
+    r = np.corrcoef(x, y)[0, 1]
+
     periodo = f"{boias[id_boia][0]} a {boias[id_boia][-1]}"
 
     lim = max(x.max(), y.max()) * 1.05
@@ -40,13 +44,17 @@ for id_boia in boias:
     ax.set_ylabel("WVHT publicado pelo NDBC (m)")
     ax.set_title(f"Boia {id_boia} ({locais[id_boia]})\nPeríodo {periodo}")
     ax.grid(alpha=0.25)
-    ax.legend(loc="lower right")
+    ax.legend(loc="upper left")
     cb = fig.colorbar(hb, ax=ax, shrink=0.8)
     cb.set_label("Número de registros por célula (escala log)")
-    ax.text(0.03, 0.97,
-            f"N = {n} registros pareados\nerro médio = {sinal}{virg(abs(erro_medio), 2)} m\n(média de $H_s$ − WVHT)",
-            transform=ax.transAxes, va="top", ha="left", fontsize=9,
-            bbox=dict(boxstyle="round", fc="white", ec="0.6", alpha=0.9))
+    ax.text(0.97, 0.03,
+            f"N = {n} registros pareados\n"
+            f"erro médio = {sinal}{virg(abs(erro_medio), 2)} m\n"
+            f"(média de $H_s$ − WVHT)\n"
+            f"RMSE = {virg(rmse, 2)} m\n"
+            f"r = {virg(r, 3)}",
+            transform=ax.transAxes, va="bottom", ha="right", fontsize=9, zorder=10,
+            bbox=dict(boxstyle="round", fc="white", ec="0.6", alpha=0.95))
     plt.savefig(os.path.join("dados", f"validacao_hs_{id_boia}.png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(id_boia, n, virg(erro_medio, 3))
