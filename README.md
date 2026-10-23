@@ -12,13 +12,13 @@ Repositório dedicado ao desenvolvimento de rotinas em Python para automação d
 | 41040 | Atlântico Norte, a leste das Pequenas Antilhas | 2019, 2020, 2021 |
 | 46080 | Portlock Bank, Golfo do Alasca | 2023, 2024, 2025 |
 
-A 46080 apresenta lacunas extensas em 2023 e 2024 (a auditoria de `analise.py` quantifica a perda de registros de cada série).
+A 46080 apresenta lacunas extensas em 2023 e 2024 (`analise.py` quantifica a perda de registros de cada série).
 
 ---
 
 ## Estrutura do Projeto e Scripts
 
-O projeto foi modularizado em scripts independentes e especializados para garantir organização, reaproveitamento de dados e facilidade de manutenção:
+O projeto foi desenvolvido em scripts independentes e especializados para garantir organização, reaproveitamento de dados e facilidade de manutenção:
 
 1. **`download_arquivos.py`**
    - **Função**: Acessa automaticamente via internet o servidor histórico do NDBC/NOAA. Realiza o download dos arquivos compactados (`.txt.gz`) dos 5 parâmetros essenciais: densidade de energia (`w`), direções de propagação (`alpha1`, `alpha2`) e coeficientes de espalhamento de Fourier (`r1`, `r2`). Arquivos já existentes na pasta local não são baixados novamente.
