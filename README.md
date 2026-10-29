@@ -68,7 +68,7 @@ O projeto foi desenvolvido em scripts independentes e especializados para garant
 
 9. **`espectro_direcional_estacoes.py`**
    - **Função**: Reconstrução bidimensional $S(f, \theta)$ média para cada estação do ano do Hemisfério Norte (Inverno, Primavera, Verão e Outono), utilizando a mesma média ponderada dos momentos complexos do script diário e os três métodos.
-   - **Inverno**: O inverno de um ano $Y$ é composto por dezembro de $Y-1$, janeiro e fevereiro de $Y$. Dezembro de $Y$ pertence ao inverno seguinte e não é incluído. Caso os dados de $Y-1$ não estejam disponíveis localmente, o script tenta baixá-los com `baixar_dados`. Se o ano anterior não existir no servidor, o inverno é calculado apenas com janeiro e fevereiro, e o título da figura indica essa limitação.
+   - **Inverno**: O inverno de um ano $Y$, para o hemisfério norte, é composto por dezembro de $Y-1$, janeiro e fevereiro de $Y$. Dezembro de $Y$ pertence ao inverno seguinte e não é incluído. Caso os dados de $Y-1$ não estejam disponíveis localmente, o script tenta baixá-los com `baixar_dados`. Se o ano anterior não existir no servidor, o inverno é calculado apenas com janeiro e fevereiro, e o título da figura indica essa limitação.
    - **Output**: Gera uma figura com os três mapas polares (Fourier, MEM de Lygre e Krogstad e MEM de Hashimoto e Kobune) para cada estação, com a boia, a localidade e o período utilizado (meses e ano) no título, por exemplo "Primavera mar a mai/2023". As unidades são as mesmas do script diário (rad).
 
 10. **`espectro_wavespectra.py`**
