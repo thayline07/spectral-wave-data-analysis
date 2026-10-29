@@ -96,13 +96,13 @@ $$D_{\text{fourier}}(\theta) = \frac{1}{\pi} \left[ \frac{1}{2} + r_1\cos(\theta
 Abordagem estatística baseada na entropia de Burg. Busca a distribuição direcional mais aleatória e menos tendenciosa possível para os componentes desconhecidos, vinculada estritamente aos 4 momentos medidos pela boia. É calculada de forma complexa resolvendo as equações de Yule-Walker:
 $$D_{\text{MEM}}(\theta) = \frac{1}{2\pi} \frac{1 - \phi_1 c_1^* - \phi_2 c_2^*}{|1 - \phi_1 e^{-i\theta} - \phi_2 e^{-i2\theta}|^2}$$
 com
-$$\phi_2 = \frac{c_2 - c_1^2}{1 - |c_1|^2}, \qquad \phi_1 = c_1 - \phi_2\,c_1^*$$
+$$\phi_2 = \frac{c_2 - c_1^2}{1 - |c_1|^2}, \quad \phi_1 = c_1 - \phi_2\,c_1^*$$
 * **Vantagens**: Proporciona altíssima resolução angular (picos extremamente estreitos e focados) e reproduz exatamente os momentos medidos. O denominador, por ser um módulo elevado ao quadrado, nunca é negativo.
 * **Limitações**: O sinal de $D_{\text{MEM}}$ é determinado pelo numerador. Quando os momentos não são fisicamente realizáveis, isto é, quando nenhuma distribuição direcional real poderia produzi-los ($|c_2 - c_1^2| > 1 - |c_1|^2$), o numerador torna-se negativo e a curva inteira é invertida, com integral igual a $-1$. Além disso, para espalhamentos unimodais com $r_2$ baixo em relação a $r_1$, o método pode dividir um único pico em dois (*peak-splitting*), de modo que um pico duplo no MEM não comprova, isoladamente, a existência de um mar bimodal. Esse efeito foi observado em 31–46% dos registros, na frequência de pico, dos casos testados (41004/2023, 46080/2023 e 41040/2020), e também no espectro sintético do `espectro-teste.py`.
 
 ### Método da Máxima Entropia de Hashimoto e Kobune
 Usa o mesmo princípio, mas maximiza a entropia de Shannon, $H_S = -\int D\ln D\,d\theta$, sujeita aos mesmos 4 momentos. A solução é uma distribuição exponencial, sempre positiva e suave:
-$$D(\theta) = \frac{1}{Z(\boldsymbol{\lambda})}\exp\!\big[-\boldsymbol{\lambda}\cdot\boldsymbol{\varphi}(\theta)\big], \qquad \boldsymbol{\varphi} = (\cos\theta,\ \sin\theta,\ \cos 2\theta,\ \sin 2\theta)$$
+$$D(\theta) = \frac{1}{Z(\boldsymbol{\lambda})}\exp\!\big[-\boldsymbol{\lambda}\cdot\boldsymbol{\varphi}(\theta)\big], \quad \boldsymbol{\varphi} = (\cos\theta,\ \sin\theta,\ \cos 2\theta,\ \sin 2\theta)$$
 em que $Z(\boldsymbol{\lambda}) = \int_0^{2\pi}\exp[-\boldsymbol{\lambda}\cdot\boldsymbol{\varphi}]\,d\theta$ normaliza a distribuição. Não há fórmula fechada para os quatro multiplicadores $\boldsymbol{\lambda}$: eles são obtidos resolvendo o problema dual, convexo,
 $$\min_{\boldsymbol{\lambda}}\ F(\boldsymbol{\lambda}) = \ln Z(\boldsymbol{\lambda}) + \boldsymbol{\lambda}\cdot\mathbf{m}, \qquad \mathbf{m} = \big(\operatorname{Re}c_1,\ \operatorname{Im}c_1,\ \operatorname{Re}c_2,\ \operatorname{Im}c_2\big)$$
 * **Algoritmo** (função `mem_shannon`): parte de $\boldsymbol{\lambda}=\mathbf{0}$ (distribuição uniforme), calcula o gradiente $\mathbf{m} - E[\boldsymbol{\varphi}]$ e o hessiano (matriz de covariância de $\boldsymbol{\varphi}$), dá o passo de Newton com busca de passo de Armijo (reduz o passo pela metade até $F$ diminuir o suficiente) e para quando $\max|\mathbf{m}-E[\boldsymbol{\varphi}]| < 10^{-10}$, com no máximo 200 iterações. O máximo do expoente é subtraído antes de exponenciar, para evitar *overflow*.
@@ -122,7 +122,7 @@ Uma média diária ou sazonal soma espectros de instantes diferentes: dois picos
 
 ### Validação de $H_s$ contra o `WVHT` (`valida_hs.py`)
 O erro médio, o RMSE e o coeficiente de correlação de Pearson são calculados sobre os $N$ registros pareados:
-$$\text{erro médio} = \frac{1}{N}\sum_{i=1}^{N}\left(H_{s,i} - \mathrm{WVHT}_i\right), \qquad \mathrm{RMSE} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}\left(H_{s,i} - \mathrm{WVHT}_i\right)^2}$$
+$$\text{erro médio} = \frac{1}{N}\sum_{i=1}^{N}\left(H_{s,i} - \mathrm{WVHT}_i\right), \quad \mathrm{RMSE} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}\left(H_{s,i} - \mathrm{WVHT}_i\right)^2}$$
 
 ---
 
