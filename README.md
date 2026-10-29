@@ -81,7 +81,7 @@ O projeto foi desenvolvido em scripts independentes e especializados para garant
 
 ## Fundamentação Teórica dos Métodos Reconstruídos
 
-Em cada frequência, as boias fornecem apenas os dois primeiros coeficientes de Fourier da distribuição direcional $D(\theta)$, com $\int_0^{2\pi} D(\theta)\,d\theta = 1$:
+Em cada frequência, as boias fornecem apenas os dois primeiros coeficientes de Fourier da distribuição direcional $D(\theta)$, com $`\int_0^{2\pi} D(\theta)\,d\theta = 1`$:
 
 $$ c_1 = \int_0^{2\pi} D(\theta)\,e^{i\theta}\,d\theta = r_1 e^{i\alpha_1}, \quad c_2 = \int_0^{2\pi} D(\theta)\,e^{2i\theta}\,d\theta = r_2 e^{2i\alpha_2} $$
 
@@ -89,22 +89,39 @@ Qualquer $D$ que satisfaça essas igualdades é compatível com os dados, e cada
 
 ### Expansão da Série de Fourier (Truncada)
 Assume que o espalhamento direcional pode ser aproximado por uma combinação linear suave de harmônicos senoidais. Devido às limitações físicas de medição das boias triaxiais, a série é cortada (**truncada**) na segunda ordem:
-$$D_{\text{fourier}}(\theta) = \frac{1}{\pi} \left[ \frac{1}{2} + r_1\cos(\theta - \alpha_1) + r_2\cos(2(\theta - \alpha_2)) \right]$$
+```math
+D_{\text{fourier}}(\theta) = \frac{1}{\pi} \left[ \frac{1}{2} + r_1\cos(\theta - \alpha_1) + r_2\cos(2(\theta - \alpha_2)) \right]
+```
 * **Limitações**: Apresenta baixa resolução angular (gerando borrões largos ao redor do pico) e sofre com oscilações numéricas que produzem **energias negativas artificiais**, violando leis físicas básicas. Por ser linear, sua integral é sempre igual a 1, mesmo quando os momentos de entrada são inconsistentes, de modo que o método não sinaliza esse tipo de problema.
 
 ### Método da Máxima Entropia (MEM) de Lygre e Krogstad
 Abordagem estatística baseada na entropia de Burg. Busca a distribuição direcional mais aleatória e menos tendenciosa possível para os componentes desconhecidos, vinculada estritamente aos 4 momentos medidos pela boia. É calculada de forma complexa resolvendo as equações de Yule-Walker:
-$$D_{\text{MEM}}(\theta) = \frac{1}{2\pi} \frac{1 - \phi_1 c_1^* - \phi_2 c_2^*}{|1 - \phi_1 e^{-i\theta} - \phi_2 e^{-i2\theta}|^2}$$
+
+```math
+D_{\text{MEM}}(\theta) = \frac{1}{2\pi} \frac{1 - \phi_1 c_1^* - \phi_2 c_2^*}{\left|1 - \phi_1 e^{-i\theta} - \phi_2 e^{-2i\theta}\right|^2}
+```
+
 com
-$$\phi_2 = \frac{c_2 - c_1^2}{1 - |c_1|^2}, \quad \phi_1 = c_1 - \phi_2\,c_1^*$$
+
+```math
+\phi_2 = \frac{c_2 - c_1^2}{1 - |c_1|^2}, \qquad \phi_1 = c_1 - \phi_2\,c_1^*
+```
+
 * **Vantagens**: Proporciona altíssima resolução angular (picos extremamente estreitos e focados) e reproduz exatamente os momentos medidos. O denominador, por ser um módulo elevado ao quadrado, nunca é negativo.
 * **Limitações**: O sinal de $D_{\text{MEM}}$ é determinado pelo numerador. Quando os momentos não são fisicamente realizáveis, isto é, quando nenhuma distribuição direcional real poderia produzi-los ($|c_2 - c_1^2| > 1 - |c_1|^2$), o numerador torna-se negativo e a curva inteira é invertida, com integral igual a $-1$. Além disso, para espalhamentos unimodais com $r_2$ baixo em relação a $r_1$, o método pode dividir um único pico em dois (*peak-splitting*), de modo que um pico duplo no MEM não comprova, isoladamente, a existência de um mar bimodal. Esse efeito foi observado em 31–46% dos registros, na frequência de pico, dos casos testados (41004/2023, 46080/2023 e 41040/2020), e também no espectro sintético do `espectro-teste.py`.
 
 ### Método da Máxima Entropia de Hashimoto e Kobune
-Usa o mesmo princípio, mas maximiza a entropia de Shannon, $H_S = -\int D\ln D\,d\theta$, sujeita aos mesmos 4 momentos. A solução é uma distribuição exponencial, sempre positiva e suave:
-$$D(\theta) = \frac{1}{Z(\boldsymbol{\lambda})}\exp\!\big[-\boldsymbol{\lambda}\cdot\boldsymbol{\varphi}(\theta)\big], \quad \boldsymbol{\varphi} = (\cos\theta,\ \sin\theta,\ \cos 2\theta,\ \sin 2\theta)$$
-em que $Z(\boldsymbol{\lambda}) = \int_0^{2\pi}\exp[-\boldsymbol{\lambda}\cdot\boldsymbol{\varphi}]\,d\theta$ normaliza a distribuição. Não há fórmula fechada para os quatro multiplicadores $\boldsymbol{\lambda}$: eles são obtidos resolvendo o problema dual, convexo,
-$$\min_{\boldsymbol{\lambda}}\ F(\boldsymbol{\lambda}) = \ln Z(\boldsymbol{\lambda}) + \boldsymbol{\lambda}\cdot\mathbf{m}, \qquad \mathbf{m} = \big(\operatorname{Re}c_1,\ \operatorname{Im}c_1,\ \operatorname{Re}c_2,\ \operatorname{Im}c_2\big)$$
+Usa o mesmo princípio, mas maximiza a entropia de Shannon, $`H_S = -\int D\ln D\,d\theta`$, sujeita aos mesmos 4 momentos. A solução é uma distribuição exponencial, sempre positiva e suave:
+
+```math
+D(\theta) = \frac{1}{Z(\boldsymbol{\lambda})}\exp\!\big[-\boldsymbol{\lambda}\cdot\boldsymbol{\varphi}(\theta)\big], \qquad \boldsymbol{\varphi} = (\cos\theta,\ \sin\theta,\ \cos 2\theta,\ \sin 2\theta)
+```
+em que $`Z(\boldsymbol{\lambda}) = \int_0^{2\pi}\exp[-\boldsymbol{\lambda}\cdot\boldsymbol{\varphi}]\,d\theta`$ normaliza a distribuição. Não há fórmula fechada para os quatro multiplicadores $\boldsymbol{\lambda}$: eles são obtidos resolvendo o problema dual, convexo,
+
+```math
+\min_{\boldsymbol{\lambda}}\ F(\boldsymbol{\lambda}) = \ln Z(\boldsymbol{\lambda}) + \boldsymbol{\lambda}\cdot\mathbf{m}, \qquad \mathbf{m} = \big(\mathrm{Re}\,c_1,\ \mathrm{Im}\,c_1,\ \mathrm{Re}\,c_2,\ \mathrm{Im}\,c_2\big)
+```
+
 * **Algoritmo** (função `mem_shannon`): parte de $\boldsymbol{\lambda}=\mathbf{0}$ (distribuição uniforme), calcula o gradiente $\mathbf{m} - E[\boldsymbol{\varphi}]$ e o hessiano (matriz de covariância de $\boldsymbol{\varphi}$), dá o passo de Newton com busca de passo de Armijo (reduz o passo pela metade até $F$ diminuir o suficiente) e para quando $\max|\mathbf{m}-E[\boldsymbol{\varphi}]| < 10^{-10}$, com no máximo 200 iterações. O máximo do expoente é subtraído antes de exponenciar, para evitar *overflow*.
 * **Método adotado**: é o método adotado para as análises deste projeto. Fourier e MEM de Lygre e Krogstad são mantidos como comparação.
 
@@ -115,14 +132,21 @@ Quando a condição não vale (por ruído do instrumento ou arredondamento dos a
 
 ### Média Temporal dos Parâmetros Direcionais
 Os parâmetros $r$ e $\alpha$ não são independentes: juntos formam os momentos complexos $c_1 = r_1e^{i\alpha_1}$ e $c_2 = r_2e^{2i\alpha_2}$. Calcular a média de $r$ e de $\alpha$ separadamente superestima a concentração direcional quando a direção varia ao longo do período, o que pode gerar momentos não realizáveis. Por isso, as médias diária e sazonal são calculadas sobre os momentos complexos, ponderados pela densidade de energia:
-$$\bar{c}_n = \frac{\sum w \, c_n}{\sum w}$$
+
+```math
+\bar{c}_n = \frac{\sum w \, c_n}{\sum w}
+```
+
 Esse procedimento equivale a calcular a média do espectro direcional $S(f, \theta)$ e garante que os momentos médios sejam sempre realizáveis. Depois, $r_1 = |\bar{c}_1|$, $\alpha_1 = \arg \bar{c}_1$, $r_2 = |\bar{c}_2|$ e $\alpha_2 = \tfrac{1}{2}\arg \bar{c}_2$.
 
 Uma média diária ou sazonal soma espectros de instantes diferentes: dois picos na média podem vir de sistemas que ocorreram em dias distintos, sem nunca terem coexistido. A coexistência de sistemas de ondas (por exemplo, vaga e marulho) só pode ser identificada no espectro de um único instante.
 
 ### Validação de $H_s$ contra o `WVHT` (`valida_hs.py`)
 O erro médio, o RMSE e o coeficiente de correlação de Pearson são calculados sobre os $N$ registros pareados:
-$$\text{erro médio} = \frac{1}{N}\sum_{i=1}^{N}\left(H_{s,i} - \mathrm{WVHT}_i\right), \quad \mathrm{RMSE} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}\left(H_{s,i} - \mathrm{WVHT}_i\right)^2}$$
+
+```math
+\text{erro médio} = \frac{1}{N}\sum_{i=1}^{N}\left(H_{s,i} - \mathrm{WVHT}_i\right), \qquad \mathrm{RMSE} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}\left(H_{s,i} - \mathrm{WVHT}_i\right)^2}
+```
 
 ---
 
