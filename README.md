@@ -83,7 +83,7 @@ O projeto foi desenvolvido em scripts independentes e especializados para garant
 
 Em cada frequência, as boias fornecem apenas os dois primeiros coeficientes de Fourier da distribuição direcional $D(\theta)$, com $\int_0^{2\pi} D(\theta)\,d\theta = 1$:
 
-$$c_1 = \int_0^{2\pi} D(\theta)\,e^{i\theta}\,d\theta = r_1 e^{i\alpha_1}, \qquad c_2 = \int_0^{2\pi} D(\theta)\,e^{2i\theta}\,d\theta = r_2 e^{2i\alpha_2}$$
+$$ c_1 = \int_0^{2\pi} D(\theta)\,e^{i\theta}\,d\theta = r_1 e^{i\alpha_1}, \quad c_2 = \int_0^{2\pi} D(\theta)\,e^{2i\theta}\,d\theta = r_2 e^{2i\alpha_2} $$
 
 Qualquer $D$ que satisfaça essas igualdades é compatível com os dados, e cada método abaixo escolhe uma solução diferente. As direções seguem a convenção do NDBC: de onde a onda vem, medida em sentido horário a partir do Norte.
 
