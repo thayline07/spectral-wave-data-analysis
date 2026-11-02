@@ -177,7 +177,7 @@ for nome_estacao, meses in estacoes_hn.items():
             + (r1 * np.cos(angulos_rad - a1))
             + (r2 * np.cos(2.0 * (angulos_rad - a2)))
         )
-        matriz_fourier[freq, :] = D_fourier * w_f
+        matriz_fourier[freq, :] = D_fourier * w_f * (np.pi / 180.0)  
 
         # Os momentos só correspondem a uma D(theta) não negativa se esta condição vale.
         viavel = (r1 < 1.0) and (np.abs(c2 - c1**2) < 1.0 - r1**2)
@@ -199,13 +199,13 @@ for nome_estacao, meses in estacoes_hn.items():
         denominador = (np.abs(1.0 - (phi1 * termo_exp1) - (phi2 * termo_exp2)) ** 2)
 
         D_max_entropia = (1.0 / (2.0 * np.pi)) * (numerador / denominador)
-        matriz_max_entropia[freq, :] = D_max_entropia.real * w_f
+        matriz_max_entropia[freq, :] = D_max_entropia.real * w_f * (np.pi / 180.0) 
 
         # Máxima entropia (Kobune e Hashimoto)
         m = np.array([c1.real, c1.imag, c2.real, c2.imag])
         D_shannon, ok = mem_shannon(m)
         if ok:
-            matriz_shannon[freq, :] = D_shannon * w_f
+            matriz_shannon[freq, :] = D_shannon * w_f * (np.pi / 180.0) 
         else:
             matriz_shannon[freq, :] = np.nan
             sem_convergir.append(frequencias[freq])
@@ -236,7 +236,7 @@ for nome_estacao, meses in estacoes_hn.items():
         ax.set_theta_direction(-1)
         ax.set_ylim([frequencias.min(), frequencias.max()])
 
-    fig1.colorbar(contorno3, ax=axes1, shrink=0.75, pad=0.04, label="Densidade de Energia ($m^2/Hz/rad$)")
+    fig1.colorbar(contorno3, ax=axes1, shrink=0.75, pad=0.04, label="Densidade de Energia ($m^2/Hz/grau$)")
 
     caminho_polar = f"reconstrucao_polar_{nome_estacao.lower().replace('ã', 'a')}_{id_boia}_{year}.png"
     fig1.savefig(caminho_polar, dpi=300, bbox_inches="tight")

@@ -82,6 +82,8 @@ def baixar_dados(id_boia, year):
 
         colunas_dados = df.columns[5:]
 
+        if parametro in ['alpha1', 'alpha2', 'r1', 'r2']:
+            df[colunas_dados] = df[colunas_dados].replace(999.0, np.nan)
 
         if parametro in ['r1', 'r2']:
             # Correção: Os arquivos de energia espectral (r1 e r2) estão em centésimos, então precisamos multiplicar por 0.01 para obter os valores corretos.
@@ -106,6 +108,6 @@ def baixar_dados(id_boia, year):
 
 if __name__ == "__main__":# Configurações
     id_boia = "41004"
-    year = 2025
+    year = 2023
 
     baixar_dados(id_boia, year)
