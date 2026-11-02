@@ -8,8 +8,8 @@ import pandas as pd
 # 41040 (2019, 2020, 2021)
 # 46080 (2023, 2024, 2025)
 
-id_boia = "46080"
-year = 2025
+id_boia = "41040"
+year = 2021
 caminho = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
 
 try:
