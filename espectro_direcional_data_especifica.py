@@ -161,7 +161,7 @@ for freq in range(len(frequencias)):
         + (r1_f * np.cos(angulos_rad - a1_f))
         + (r2_f * np.cos(2.0 * (angulos_rad - a2_f)))
     )
-    matriz_fourier[freq, :] = D_fourier * w_f
+    matriz_fourier[freq, :] = D_fourier * w_f * (np.pi / 180.0)  
 
 
     # Os momentos só correspondem a uma D(theta) não negativa se esta condição vale.
@@ -188,13 +188,13 @@ for freq in range(len(frequencias)):
     
 
     D_max_entropia = (1.0 / (2.0 * np.pi)) * (numerador / denominador)
-    matriz_max_entropia[freq, :] = D_max_entropia.real * w_f
+    matriz_max_entropia[freq, :] = D_max_entropia.real * w_f * (np.pi / 180.0) 
 
     # Máxima entropia (Kobune e Hashimoto)
     m = np.array([c1.real, c1.imag, c2.real, c2.imag])
     D_shannon, ok = mem_shannon(m)
     if ok:
-        matriz_shannon[freq, :] = D_shannon * w_f
+        matriz_shannon[freq, :] = D_shannon * w_f * (np.pi / 180.0) 
     else:
         matriz_shannon[freq, :] = np.nan
         sem_convergir.append(frequencias[freq])
@@ -243,7 +243,7 @@ for ax in axes1:
     ax.set_ylim([frequencias.min(), frequencias.max()])
 
 fig1.colorbar(
-    contorno3, ax=axes1, shrink=0.75, pad=0.04, label="Densidade de Energia ($m^2/Hz/rad$)"
+        contorno3, ax=axes1, shrink=0.75, pad=0.04, label="Densidade de Energia ($m^2/Hz/grau$)"
 )
 
 caminho_polar = f"reconstrucao_polar_media_{id_boia}_{year}.png"
@@ -292,7 +292,7 @@ plt.title(
     pad=12,
 )
 plt.xlabel("Direção Angular de Incidência (Graus)", fontsize=11)
-plt.ylabel("Densidade Direcional $D(\\theta)$ ($rad^{-1}$)", fontsize=11)
+plt.ylabel("Densidade Direcional $D(\\theta)$ ($grau^{-1}$)", fontsize=11)
 plt.xlim(0, 360)
 plt.xticks(np.arange(0, 361, 45))
 plt.grid(linestyle="--", alpha=0.5)
