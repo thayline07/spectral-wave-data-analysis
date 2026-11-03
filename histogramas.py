@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import pickle
 
 # Boias escolhidas e anos usados em cada uma
 boias = {
@@ -17,7 +18,7 @@ locais = {
     "46080": "Portlock Bank, Golfo do Alasca",
 }
 
-id_boia = "46080"   # trocar para gerar as figuras de cada boia
+id_boia = "41040"   # trocar para gerar as figuras de cada boia
 
 anos = boias[id_boia]
 local = locais[id_boia]
@@ -100,13 +101,34 @@ caminho_img_hs = os.path.join("dados", f"histograma_hs_{id_boia}.png")
 plt.savefig(caminho_img_hs, dpi=300, bbox_inches="tight")
 plt.show()
 
-# Período de pico
-plt.figure(figsize=(7, 5))
-plt.hist(df_series["Tp"].dropna(), bins=15, color="green", edgecolor="black", alpha=0.7)
+# Período de pico, uma barra por frequência
+for year in anos:
+    caminho_pkl = os.path.join("dados", f"{id_boia}_{year}", f"dados_{id_boia}_{year}.pkl")
+    if os.path.exists(caminho_pkl):
+        with open(caminho_pkl, "rb") as arq:
+            freqs = np.array([float(c) for c in pickle.load(arq)["w"].columns[5:]])
+        break
+if freqs is None:
+    print("Nenhum .pkl encontrado para obter as frequências.")
+    exit(1)
+
+periodos = np.sort(1.0 / freqs)          # Tp = 1/f, em ordem crescente
+
+# Cada registro vai para a frequência (período) mais próxima
+tp = df_series["Tp"].dropna().to_numpy()
+idx = np.abs(tp[:, None] - periodos[None, :]).argmin(axis=1)
+contagem = np.bincount(idx, minlength=len(periodos))
+print(f"Tp: {contagem.sum()} registros em {len(periodos)} frequências")
+
+plt.figure(figsize=(9, 5))
+plt.bar(np.arange(len(periodos)), contagem, width=0.9,
+        color="green", edgecolor="black", alpha=0.7)
+plt.xticks(np.arange(len(periodos)), [f"{p:.2f}" for p in periodos],
+           rotation=90, fontsize=7)
 
 plt.title(f"Histograma de $T_p$ - Boia {id_boia} ({local})\nPeríodo {periodo}",
           fontsize=11, fontweight="bold")
-plt.xlabel("Período de Pico $T_p$ (segundos)", fontsize=11)
+plt.xlabel("Período de Pico $T_p = 1/f_p$ (segundos), uma barra por frequência", fontsize=11)
 plt.ylabel("Frequência $N$ (número de registros)", fontsize=11)
 plt.grid(axis="y", linestyle="--", alpha=0.5)
 plt.tight_layout()

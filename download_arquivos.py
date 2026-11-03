@@ -107,7 +107,7 @@ def baixar_dados(id_boia, year):
 # 46080 (2023, 2024, 2025)
 
 if __name__ == "__main__":# Configurações
-    id_boia = "41004"
-    year = 2023
+    id_boia = "46080"
+    year = 2025
 
     baixar_dados(id_boia, year)
