@@ -49,21 +49,72 @@ print("m0:", m0)
 s_max = np.argmax(E)
 print("Freq:", freqs[s_max])
 
-plt.plot(freqs, E)
-#plt.show()
-
 # ---------------------
 
 angulos_graus = np.arange(0, 361, 1)
 angulos_rad = np.radians(angulos_graus)
 
+def espalhamento(theta_0, s):
+    delta = ((angulos_graus - theta_0 + 180) % 360) - 180
+    D = np.cos(np.radians(delta)/2.0)**(2*s)
+    D = D / np.trapezoid(D, x=angulos_rad)
+
+    return D
+
+def momentos(D):
+    c1 = np.trapezoid(D * np.exp(1j * angulos_rad), angulos_rad)
+    c2 = np.trapezoid(D * np.exp(2j * angulos_rad), angulos_rad)
+
+    r1 = np.abs(c1)
+    r2 = np.abs(c2)
+
+    a1 = np.degrees(np.angle(c1)) % 360
+    a2 = np.degrees(np.angle(c2)) % 360
+    return c1, c2, r1, r2, a1, a2
+
 theta_0 = 270
-s = 10 # espalhamento
 
-delta = ((angulos_graus - theta_0 + 180) % 360) - 180
+for s in [2, 10, 40]:
+    D = espalhamento(theta_0, s)
+    c1, c2, r1, r2, a1, a2 = momentos(D)
 
-# D:
-D = np.cos(np.radians(delta)/2.0)**(2*s)
-D = D / np.trapezoid(D, x=angulos_rad)
+    print(f"s={s}:  r1={r1:.6f}, r2={r2:.6f}, a1={a1:.6f}, a2={a2:.6f}")
 
-print(D[angulos_graus == 90])
+
+# reconstrução por fourier
+D_fourier = np.zeros((len(freqs), len(angulos_rad)))
+D_fourier += (1/np.pi)*((1/2) + (r1*np.cos(angulos_rad - np.radians(a1))) + (r2*np.cos(2*(angulos_rad - np.radians(a2)))))
+
+D_mem_lygre_krogstad = np.zeros((len(freqs), len(angulos_rad)))
+phi2 = (c2 - (c1**2)) / (1 - (np.abs(c1)**2))
+phi1 = c1 - (phi2 * np.conj(c1))
+D_mem_lygre_krogstad = (1/(2*np.pi)) * ((1 - np.real((phi1*np.conj(c1)+(phi2*np.conj(c2))))) / np.abs(1 - (phi1*np.exp(-1j*angulos_rad)) - (phi2*np.exp(-2j*angulos_rad)))**2)
+
+fig, axes = plt.subplots(1, 2, figsize=(15, 6), subplot_kw={'projection': 'polar'})
+Angulos, Freqs = np.meshgrid(angulos_rad, freqs)
+
+v_min = np.min(D_fourier)
+v_max = np.max(D_fourier)
+niveis_cores = np.linspace(v_min, v_max, 30)
+
+contorno1 = axes[0].contourf(Angulos, Freqs, D_fourier, cmap='jet', levels=niveis_cores)
+axes[0].set_title("Reconstrução por Fourier", fontsize=12, fontweight='bold')
+
+# Máxima entropia
+contorno2 = axes[1].contourf(Angulos, Freqs, D_mem_lygre_krogstad, cmap='jet', levels=niveis_cores)
+#axes[1].set_title("Reconstrução por Máxima Entropia", fontsize=12, fontweight='bold')
+
+for ax in axes:
+    ax.set_theta_zero_location('N')
+    ax.set_theta_direction(-1)
+    ax.set_ylim([freqs.min(), freqs.max()])
+
+
+fig.subplots_adjust(right=1.4)
+cbar_ax = fig.add_axes([0.88, 0.15, 0.02, 0.7])
+fig.colorbar(contorno1, cax=cbar_ax, label='Densidade de Energia ($m^2/Hz/$)')
+
+
+caminho_polar = f"reconstrucao_polar_{id_boia}_{year}.png"
+plt.tight_layout()
+plt.show()
