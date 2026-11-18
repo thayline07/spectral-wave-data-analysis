@@ -16,21 +16,33 @@ A 46080 apresenta lacunas extensas em 2023 e 2024 (`analise.py` quantifica a per
 
 ---
 
+## Organização das pastas
+
+| Pasta | Conteúdo |
+| ----- | -------- |
+| `baixa-dados-boias/` | Download e controle de qualidade dos espectros (`download_arquivos.py`), vento e `WVHT` (`wind.py`) e parâmetros integrados (`analise.py`) |
+| `histogramas/` | Histogramas de $H_s$ e $T_p$ (`histogramas.py`) e validação do $H_s$ contra o `WVHT` (`valida_hs.py`) |
+| `espectro-reconstrucao/` | Reconstrução direcional: espectro sintético (`espectro-teste.py`), instante específico, média diária e média sazonal |
+| `valida-reconstrucao/` | Verificação da reconstrução: comparação com a `wavespectra` (`teste_de_espectro_wavespectra.py`) e `valida_reconstrucao.py` |
+| `era5/` | Scripts de comparação com os espectros direcionais do ERA5 |
+
+---
+
 ## Estrutura do Projeto e Scripts
 
 O projeto foi desenvolvido em scripts independentes e especializados para garantir organização, reaproveitamento de dados e facilidade de manutenção:
 
-1. **`download_arquivos.py`**
+1. **`baixa-dados-boias/download_arquivos.py`**
    - **Função**: Acessa automaticamente via internet o servidor histórico do NDBC/NOAA. Realiza o download dos arquivos compactados (`.txt.gz`) dos 5 parâmetros essenciais: densidade de energia (`w`), direções de propagação (`alpha1`, `alpha2`) e coeficientes de espalhamento de Fourier (`r1`, `r2`). Arquivos já existentes na pasta local não são baixados novamente.
    - **Controle de Qualidade (QC)**: Nos arquivos históricos, dado ausente é indicado por uma sequência de noves: `999.0` nos arquivos de direção (`alpha1`, `alpha2`) e `999.00` nos de `r1` e `r2`. Esses códigos são substituídos por `NaN`. Em seguida, os coeficientes $r_1$ e $r_2$ válidos têm a escala física corrigida, multiplicando-os por $0.01$ (os arquivos originais armazenam esses valores em centésimos). Nos arquivos de direção, `99` **não** é código de ausência: é uma direção válida (99°). Ao final, consolida tudo em um único dicionário binário compactado (`.pkl`).
    - **Uso como módulo**: Toda a rotina está encapsulada na função `baixar_dados(id_boia, year)`, que retorna o caminho do `.pkl` gerado ou `None` caso algum dos 5 arquivos não exista no servidor. Isso permite que outros scripts baixem automaticamente anos que ainda não estejam disponíveis localmente.
 
-2. **`wind.py`**
+2. **`baixa-dados-boias/wind.py`**
    - **Função**: Realiza o download dos dados meteorológicos padrão da boia (pasta `stdmet` do NDBC, arquivos com sufixo `h`), contendo a direção (`WDIR`) e a velocidade (`WSPD`) do vento local e a altura significativa de onda publicada pelo NDBC (`WVHT`). Se o download não for concluído ou o arquivo não existir, o script informa o problema e encerra.
    - **Controle de Qualidade (QC)**: Substitui os códigos de ausência de medição (`999` para direção, `99.0` para velocidade e `99.0` para `WVHT`) por valores nulos (`NaN`).
    - **Saída**: Cria o índice cronológico `data_registro` e exporta as séries em formato `.csv` (`wind_{boia}_{ano}.csv`), com as colunas `dir` (vento), `vel` (vento) e `height` (`WVHT`). O `wind.py` deve ser executado **antes** do `analise.py`, que usa a coluna `height`, e é também a fonte do vento usado nos scripts de reconstrução direcional.
 
-3. **`analise.py`**
+3. **`baixa-dados-boias/analise.py`**
    - **Função**: Carrega os dados limpos do arquivo `.pkl` e realiza o cálculo dos parâmetros integrados registro a registro para o ano inteiro.
    - **Cálculo de $H_s$**: Obtém a Altura Significativa calculando o momento de ordem zero ($m_0$), que representa a área total sob a curva do espectro de energia ($H_s = 4\sqrt{m_0}$), utilizando a largura de cada faixa de frequência (`np.diff`; a última faixa repete a largura da anterior). O NDBC calcula o `WVHT` também como $4\sqrt{m_0}$, mas com a largura de banda informada para cada sistema de medição (de 0.005 Hz a 0.02 Hz), o que torna a comparação com o `WVHT` uma validação independente.
    - **Cálculo de $T_p$**: Localiza a frequência de pico onde ocorre a maior densidade energética e extrai o Período de Pico através do seu inverso ($T_p = 1/f_p$).
@@ -38,39 +50,39 @@ O projeto foi desenvolvido em scripts independentes e especializados para garant
    - **Cruzamento com o `WVHT`**: Se existir o `wind_{boia}_{ano}.csv`, cada registro espectral recebe o `WVHT` mais próximo no tempo (`pd.merge_asof`, direção `nearest`, tolerância de 20 minutos), na coluna `height`. Se o arquivo não existir, o script avisa e gera a série sem essa coluna.
    - **Saída**: Cria um índice cronológico unificado (`data_registro`) e exporta as séries temporais consolidadas em formato `.csv` (`series_temporais_{boia}_{ano}.csv`), com `Hs`, `Tp` e `height`.
 
-4. **`histogramas.py`**
+4. **`histogramas/histogramas.py`**
    - **Função**: Lê as séries temporais em `.csv` de todos os anos de cada boia, concatena e remove duplicatas, e gera as distribuições de frequência estatística das variáveis marinhas para todo o período, sem separar por ano.
    - **Análise Física**: Produz gráficos de barras independentes para identificar o clima de ondas padrão da estação, assimetrias temporais, limites de normalidade e dominâncias dinâmicas de sistemas de vagas (_wind sea_ de períodos curtos) e marulhos (_swell_ de longos períodos). Salvando os outputs automaticamente em imagens `.png` (`histograma_hs_{boia}.png` e `histograma_tp_{boia}.png`). Os títulos indicam a boia, a localidade e o período. O histograma de $H_s$ usa 25 classes. O histograma de $T_p$ tem uma barra por frequência publicada pelo NDBC (47 barras), porque $T_p = 1/f_p$ só assume os valores dessas frequências; as barras seguem a ordem crescente de $T_p$, têm a mesma largura e são rotuladas com o período $1/f_p$ em segundos. As 47 frequências são lidas do cabeçalho do `.pkl`, de modo que frequências sem registros aparecem como barras vazias. Com classes de largura fixa em segundos, cada classe conteria um número diferente de valores possíveis de $T_p$, o que criaria picos e vales artificiais.
    - **Estatísticas de $H_s$**: Marca no histograma a mediana, o valor máximo e o percentil 99 ($P_{99}$, valor de $H_s$ ultrapassado em apenas 1% dos registros), que descreve o mar de tempestade do local de forma mais robusta que o máximo, por não depender de um único evento.
    - **Escala do Eixo Vertical**: Utiliza escala de raiz quadrada no eixo das contagens do histograma de $H_s$, comprimindo as classes com milhares de registros mais do que as classes com poucas dezenas. Isso torna visível a cauda da distribuição (eventos extremos), mantendo no eixo os valores reais de contagem. O eixo vertical do histograma de $H_s$ indica essa transformação ("escala de raiz quadrada") e o do histograma de $T_p$, que é linear, indica "número de registros".
    - **Verificação de Extremos**: A função `checar_vizinhos` localiza o registro de $H_s$ máximo e exibe os registros vizinhos, permitindo verificar se o valor pertence a um evento contínuo (tempestade) ou se é um valor isolado e possivelmente espúrio.
-5. **`valida_hs.py`**
+5. **`histogramas/valida_hs.py`**
    - **Função**: Valida o cálculo de $H_s$ do `analise.py` contra o `WVHT` publicado pelo próprio NDBC (coluna `height` das séries temporais). Para cada boia, usa os registros pareados de todos os anos.
    - **Saída**: Um gráfico de dispersão por boia (`validacao_hs_{boia}.png`), com $H_s$ calculado no eixo horizontal, `WVHT` no eixo vertical e a reta $y = x$. Os pontos são coloridos pela densidade de registros (escala logarítmica). Cada figura indica o número de registros pareados ($N$), o erro médio (média de $H_s - \mathrm{WVHT}$), o RMSE e o coeficiente de correlação de Pearson ($r$).
    - **Requisito**: precisa dos `series_temporais_{boia}_{ano}.csv` com a coluna `height`, gerados pelo `analise.py` depois do `wind.py`.
 
-6. **`espectro-teste.py`**
+6. **`espectro-reconstrucao/espectro-teste.py`**
    - **Função**: Laboratório numérico de validação controlada. Cria um espectro direcional artificial utilizando uma distribuição Gaussiana na frequência e um espalhamento cossenoidal focado em uma direção (90° Leste).
    - **Objetivo**: Aplica a engenharia reversa para extrair os coeficientes e testa o comportamento intrínseco dos algoritmos frente a dados perfeitos, permitindo diagnosticar limitações teóricas como o fenômeno de _peak-splitting_ e vazamento de energia.
 
-7. **`espectro_direcional.py`**
+7. **`espectro-reconstrucao/espectro_direcional.py`**
    - **Função**: Script de reconstrução bidimensional $S(f, \theta)$ para um instante específico (data e hora definidas em `data_alvo`), utilizando dados reais medidos pelas boias do NDBC. Os espectros são registrados nos minutos 10 e 40 de cada hora.
    - **Modelagem**: Processa as matrizes de energia para cada uma das 47 frequências em todo o círculo trigonométrico (malha de 1°, de 0° a 360°; o ponto de 360° repete o de 0° apenas para fechar o gráfico polar) aplicando simultaneamente três abordagens: a **Expansão Linear de Fourier** (2ª ordem truncada), o **MEM de Lygre e Krogstad** (entropia de Burg) e o **MEM de Hashimoto e Kobune** (entropia de Shannon, resolvida por Newton com busca de passo de Armijo). Frequências cujos momentos não são realizáveis (condição de viabilidade na seção de fundamentação teórica) ficam como `NaN` nos MEM e aparecem em branco.
    - **Integração com o Vento**: Como os registros de vento e de espectro não ocorrem nos mesmos minutos, o vento correspondente é localizado por proximidade temporal com `pd.merge_asof` (direção `nearest`, tolerância de 20 minutos). Caso não exista vento válido dentro da tolerância, o script informa a ausência.
    - **Output**: Renderiza mapas de calor coloridos (`contourf` polar em coordenadas geográficas/náuticas) com os três métodos em painéis lado a lado, usando os mesmos níveis de cores (do menor ao maior valor entre os três) e uma única barra de cores, com a direção e a velocidade do vento indicadas na figura. Os títulos incluem a boia e a localidade. Gera também um gráfico cartesiano de $D(\theta)$ na frequência de pico, sobrepondo os três métodos e uma linha vertical na direção do vento. O eixo vertical está em 1/grau.
 
-8. **`espectro_direcional_data_especifica.py`**
+8. **`espectro-reconstrucao/espectro_direcional_data_especifica.py`**
    - **Função**: Reconstrução bidimensional $S(f, \theta)$ da média diária de um dia escolhido (`dia_alvo` e `mes_alvo`), aplicando os três métodos (Fourier, MEM de Lygre e Krogstad e MEM de Hashimoto e Kobune).
    - **Média dos Momentos**: A média é calculada sobre os momentos complexos de cada registro ($c_1 = r_1e^{i\alpha_1}$ e $c_2 = r_2e^{2i\alpha_2}$), ponderados pela densidade de energia `w`. Registros com valores nulos recebem peso zero. Os detalhes estão na seção de fundamentação teórica.
    - **Verificação**: Exibe a integral de $D(\theta)$ em cada frequência pela regra dos trapézios (`np.trapezoid`), que deve resultar em 1 para os métodos.
    - **Output**: Gera os mapas polares da média diária e o gráfico cartesiano de $D(\theta)$ na frequência de pico, com a boia e a localidade nos títulos. Nestes dois gráficos, $D(\theta)$ e a densidade de energia estão em radianos (1/rad e m²/Hz/rad), enquanto os gráficos de instante específico usam graus.
 
-9. **`espectro_direcional_estacoes.py`**
+9. **`espectro-reconstrucao/espectro_direcional_estacoes.py`**
    - **Função**: Reconstrução bidimensional $S(f, \theta)$ média para cada estação do ano do Hemisfério Norte (Inverno, Primavera, Verão e Outono), utilizando a mesma média ponderada dos momentos complexos do script diário e os três métodos.
    - **Inverno**: O inverno de um ano $Y$, para o hemisfério norte, é composto por dezembro de $Y-1$, janeiro e fevereiro de $Y$. Dezembro de $Y$ pertence ao inverno seguinte e não é incluído. Caso os dados de $Y-1$ não estejam disponíveis localmente, o script tenta baixá-los com `baixar_dados`. Se o ano anterior não existir no servidor, o inverno é calculado apenas com janeiro e fevereiro, e o título da figura indica essa limitação.
    - **Output**: Gera uma figura com os três mapas polares (Fourier, MEM de Lygre e Krogstad e MEM de Hashimoto e Kobune) para cada estação, com a boia, a localidade e o período utilizado (meses e ano) no título, por exemplo "Primavera mar a mai/2023". As unidades são as mesmas do script diário (rad).
 
-10. **`espectro_wavespectra.py`**
+10. **`valida-reconstrucao/teste_de_espectro_wavespectra.py`**
     - **Função**: Verifica a reconstrução de Fourier contra a biblioteca [`wavespectra`](https://github.com/wavespectra/wavespectra), que lê os mesmos cinco arquivos `.txt.gz` originais com `read_file` e reconstrói $S(f,\theta)$ com `construct_spectra` (Fourier truncado na 2ª ordem, malha de 1°). A biblioteca não implementa MEM.
     - **Tratamento dos dados**: remove duplicatas, troca o código de ausência `999` por `NaN`, alinha os cinco arquivos nos mesmos horários e aplica o fator $0.01$ a $r_1$ e $r_2$, conferindo que o máximo de $r_1$ não ultrapassa 1 (os arquivos de direção não são alterados em `99`).
     - **Verificação numérica**: calcula a maior diferença absoluta entre o espectro obtido pela rotina própria de Fourier e o da biblioteca. Para a boia 41004 em 01/01/2025 às 09:10 UTC, a diferença máxima foi de $2.43\times10^{-17}$ m²/Hz/grau, frente a um pico de $3.94\times10^{-2}$ m²/Hz/grau, isto é, da ordem do erro de arredondamento.
@@ -160,45 +172,45 @@ O erro médio, o RMSE e o coeficiente de correlação de Pearson são calculados
 
 ## Como Executar as Rotinas
 
-Os códigos estão preparados para operar sequencialmente de forma automatizada. Garanta que o ambiente possua as bibliotecas `pandas`, `numpy` e `matplotlib` devidamente instaladas (para o `espectro_wavespectra.py`, também `xarray` e `wavespectra`). Em cada script, o ID da boia e o ano são definidos no cabeçalho (`id_boia` e `year`). Todos os dados são salvos e lidos na pasta `dados/{boia}_{ano}/`, relativa à pasta de onde os scripts são executados:
+Os códigos estão preparados para operar sequencialmente de forma automatizada. Garanta que o ambiente possua as bibliotecas `pandas`, `numpy` e `matplotlib` devidamente instaladas (para o `teste_de_espectro_wavespectra.py`, também `xarray` e `wavespectra`). Em cada script, o ID da boia e o ano são definidos no cabeçalho (`id_boia` e `year`). Todos os dados são salvos e lidos na pasta `dados/{boia}_{ano}/`, relativa à pasta de onde os scripts são executados. Como os scripts estão em subpastas, execute-os a partir da pasta raiz do repositório, indicando a subpasta no comando; assim, todos leem e gravam na mesma pasta `dados/`:
 
 1. Altere o ID da boia e o ano desejado no cabeçalho do script de automação e execute o download/limpeza:
    ```bash
-   python download_arquivos.py
+   python baixa-dados-boias/download_arquivos.py
    ```
 2. Baixe e trate os dados de vento e o `WVHT` da mesma boia e ano (necessário antes do `analise.py`):
    ```bash
-   python wind.py
+   python baixa-dados-boias/wind.py
    ```
 3. Processe a matemática das séries temporais integradas de altura e período:
    ```bash
-   python analise.py
+   python baixa-dados-boias/analise.py
    ```
 4. Gere as análises gráficas estatísticas de histogramas (todos os anos da boia):
    ```bash
-   python histogramas.py
+   python histogramas/histogramas.py
    ```
 5. Compare o $H_s$ calculado com o `WVHT` do NDBC (um gráfico por boia):
    ```bash
-   python valida_hs.py
+   python histogramas/valida_hs.py
    ```
 6. Para simular e validar os códigos no ambiente controlado do laboratório sintético:
    ```bash
-   python espectro-teste.py
+   python espectro-reconstrucao/espectro-teste.py
    ```
 7. Para renderizar os mapas de calor polares e comparar os três métodos direcionais com dados reais do oceano em um instante específico:
    ```bash
-   python espectro_direcional.py
+   python espectro-reconstrucao/espectro_direcional.py
    ```
 8. Para a reconstrução direcional média de um dia específico:
    ```bash
-   python espectro_direcional_data_especifica.py
+   python espectro-reconstrucao/espectro_direcional_data_especifica.py
    ```
 9. Para a reconstrução direcional média de cada estação do ano:
    ```bash
-   python espectro_direcional_estacoes.py
+   python espectro-reconstrucao/espectro_direcional_estacoes.py
    ```
 10. Para conferir a reconstrução de Fourier com a biblioteca `wavespectra`:
     ```bash
-    python espectro_wavespectra.py
+    python valida-reconstrucao/teste_de_espectro_wavespectra.py
     ```
